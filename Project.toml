@@ -1,0 +1,8 @@
+name = "ExoClouds"
+uuid = "53af40e6-7116-4831-a8e2-a0d88631f90d"
+authors = ["aditya-sengupta <aditya.sengupta@berkeley.edu>"]
+version = "0.1.0"
+
+[deps]
+Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
+UnitfulAstro = "6112ee07-acf9-5e0f-b108-d242c714bf9f"
