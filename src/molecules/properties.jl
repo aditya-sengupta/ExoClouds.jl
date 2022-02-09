@@ -1,6 +1,3 @@
-include("../utils.jl")
-include("molecule.jl")
-
 function mmr(m::Molecule, mw_atmos::Mass, mh::AbstractFloat, gas_mmr=nothing)
     if isnothing(gas_mmr)
         ratio = mmr_ratio(m)

@@ -1,5 +1,6 @@
 module ExoClouds
 
-greet() = print("Hello World!")
+const PROJECT_ROOT = pkgdir(ExoClouds)
+# "/"*relpath((@__FILE__)*"/../..","/")
 
 end # module

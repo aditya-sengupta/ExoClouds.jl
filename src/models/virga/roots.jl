@@ -1,3 +1,5 @@
+using Unitful: R
+using LinearAlgebra: ⋅
 
 function advdiff_const(
     qₜ::AbstractFloat,
@@ -170,10 +172,8 @@ end
 # solve_force_balance goes into simulator
 
 """
-Calculates the pressure of saturation mixing ratio for a gas 
-that is extrapolated below the model domain. 
-This is specifically used if the gas has saturated 
-below the model grid
+Calculates the pressure of saturation mixing ratio for a gas that is extrapolated below the model domain. 
+This is specifically used if the gas has saturated below the model grid
 """
 function qvs_below_model(
     p_test, 
@@ -183,20 +183,15 @@ function qvs_below_model(
     qv_factor,
     m::Molecule,
     mh,
-    q_below=None)
+    q_below=nothing)
     #  Extrapolate temperature lapse rate to test pressure
 
     t_test = qv_t + log(qv_p / p_test)* qv_dtdlnp
     
     #  Compute saturation mixing ratio
-    if typeof(m) == Mg₂SiO₄
-        pvap_test = vaporpressure(t_test, p_test, mh)
-    else
-        pvap_test = vaporpressure(t_test,mh)
-    end
+    pvap_test = vaporpressure(m, t_test, p_test, mh)
     fx = qv_factor * pvap_test / p_test 
     return log(fx) - log(q_below)
-
 
 """
 Root function used to find condenstation temperature. E.g. 
@@ -216,19 +211,14 @@ gas_name : str
     gas name, case sensitive 
 """
 function find_cond_t(t_test, p_test, mh, mmw, m::Molecule)   
-    #get gas mixing ratio 
-    gas_mw = mw(m)
-    gas_mmr = mmr(m)
-    gas_ρ = ρ(m)
-    gas_mw, gas_mmr, rho = gas_p_fun(mmw,mh=mh)
     #get vapor pressure and correct for masses of atmo and gas 
-    if gas_name == 'Mg2SiO4':
-        pv = gas_mw/mmw*pvap_fun(t_test,p_test, mh=mh)/1e6 #dynes to bars 
-    else:
-        pv = gas_mw/mmw*pvap_fun(t_test, mh=mh)/1e6 #dynes to bars 
+    pv = mw(m) / mmw * vaporpressure(t_test,p_test, mh=mh) 
     #get partial pressure
-    partial_p = gas_mmr*p_test*mh 
-    if pv == 0:
-        pv = 1e-30 #dummy small
+    partial_p = mmr(m) * p_test * mh 
+    pv = max(pv, 1e-30)
     return log10(pv) - log10(partial_p)
 
+function find_rg(fsed, rw, α, d::UnivariateDistribution)
+    # params rg, s, loc get folded into the distribution 'd'
+    fsed - moment(d, 3+α) / (rw^α) / moment(d, 3)
+end

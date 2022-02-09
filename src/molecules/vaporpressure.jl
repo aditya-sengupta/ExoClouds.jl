@@ -1,14 +1,9 @@
-using Unitful, UnitfulAstro
 using Unitful: cm, bar, °C, K
 using UnitfulAstro: dyn
 
-include("constants.jl")
-include("molecules.jl")
-include("../utils.jl")
-
 vapormhfactor(::Molecule) = 0.0
 
-function vaporpressure(m::Molecule, T::Temperature, mh::AbstractFloat=1)
+function vaporpressure(m::Molecule, T::Temperature, p::Pressure=1e6*dyn, mh::AbstractFloat=1.0)
     if (mh != 1) && (vapormhfactor(m) == 0.0)
         throw("Warning: no M/H Dependence in vapor pressure curve for $(typeof(m))")
     end
@@ -53,7 +48,7 @@ vapormhfactor(::MgSiO₃) = 1.0
 vaporintercept(::Mg₂SiO₄) = 14.88
 vaporslope(::Mg₂SiO₄) = 32488.0u"K"
 vapormhfactor(::Mg₂SiO₄) = 1.4
-function vaporpressure(m::Mg₂SiO₄, T::AbstractFloat, logmh::AbstractFloat, p::AbstractFloat)
+function vaporpressure(m::Mg₂SiO₄, T::Temperature, p::Pressure, logmh::AbstractFloat)
     # this one doesn't quite fit the signature of the parent, but dispatch will take care of the case where you don't want to specify a p
     vaporcurve(m, T, logmh) * p / 10 ^ (6.2)
 end
