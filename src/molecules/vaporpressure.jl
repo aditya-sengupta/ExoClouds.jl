@@ -3,8 +3,8 @@ using Unitful: cm, bar, °C, K
 using UnitfulAstro: dyn
 
 include("constants.jl")
-include("utils.jl")
 include("molecules.jl")
+include("../utils.jl")
 
 vapormhfactor(::Molecule) = 0.0
 

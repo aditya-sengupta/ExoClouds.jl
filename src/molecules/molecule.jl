@@ -1,8 +1,3 @@
-"""
-Defines various molecules that may exist in atmospheres. A specific molecule is a struct that subtypes Molecule.
-Note that molecules have no attributes of their own, and are instead only to be used for function dispatch.
-"""
-
 abstract type Molecule end
 
 struct TiO₂ <: Molecule end
