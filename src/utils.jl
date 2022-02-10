@@ -1,5 +1,10 @@
 using Unitful: 𝐌, 𝚯, 𝐋, 𝐓
 
+# Convention with questionable performance benefits (see if profiler throws a fit at this):
+# dimensionless numbers are all type Real and are instantiated as whatever, most often Float64 but we'll let the compiler do its thing mostly
+# (this is how Base Julia does it usually)
+# quantities are all forced to be Float64s to allow for concrete allocations on a non-Base type
+
 Temperature = Quantity{Float64,𝚯} # any number that carries units of temperature
 Pressure = Quantity{Float64,𝐋𝐌𝐓⁻²}
 Mass = Quantity{Float64, 𝐌}
