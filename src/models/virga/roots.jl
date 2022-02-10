@@ -11,7 +11,7 @@ function advdiff_const(
     zb::Length,
     b::AbstractFloat,
     ϵ::AbstractFloat
-) 
+)
     ad_qc = max(0.0, qₜ - ad_qvs)
     advdif = ad_qbelow * exp(-ad_rainf * ad_qc * ad_dz / (qₜ * ad_mixl))
     advdif - qₜ
