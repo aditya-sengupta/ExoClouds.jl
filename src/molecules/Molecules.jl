@@ -3,6 +3,9 @@ Defines various molecules that may exist in atmospheres. A specific molecule is 
 Note that molecules have no attributes of their own, and are instead only to be used for function dispatch.
 """
 module Molecules
+    using Unitful
+    using Unitful: Mass, Temperature, Pressure, Length, Acceleration
+
     include("../utils.jl")
     include("constants.jl")
     include("molecule.jl")

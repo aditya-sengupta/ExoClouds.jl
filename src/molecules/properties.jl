@@ -20,8 +20,8 @@ mmr_prop(::CH₄) = 4.9e-4
 density(::CH₄) = 0.49*g/cm^3
 
 molecular_weight(::NH₃) = 17.0u"u"
-mmr_prop(::CH₄) = 1.34e-4
-density(::CH₄) = 0.84*g/cm^3
+mmr_prop(::NH₃) = 1.34e-4
+density(::NH₃) = 0.84*g/cm^3
 
 molecular_weight(::H₂O) = 18.0u"u"
 mmr_prop(::H₂O) = 7.54e-4
@@ -63,7 +63,7 @@ mmr_prop(::ZnS) = 8.40e-8
 density(::ZnS) = 4.04*g/cm^3
 
 molecular_weight(::Cr) = 51.996u"u"
-function mmr(m::KCl, mw_atmos::Mass, mh::AbstractFloat)
+function mmr(m::Cr, mw_atmos::Mass, mh::AbstractFloat)
     if mh == 1
         ratio = 8.87e-7
     elseif mh == 10

@@ -1,3 +1,4 @@
+using Unitful: Acceleration, Length, Mass, Temperature, Pressure # dimensions
 using Unitful: cm, K # units
 using Unitful: k, R, G # constants
 using ForwardDiff
@@ -21,11 +22,15 @@ gravity(mass, radius) = G * mass / (radius ^ 2)
     fsed::Real = 0.5
     mh::Real = 1.0
     mean_molecular_weight::Mass = 2.2u"u" # TODO unit check i doubt it's this lmao
-    cₚ::Real = 7//2 # erg/K/g, fix typing?
+    cₚf::Real = 7//2 # erg/K/g, fix typing?
     molecule_diameter::Length = 2.827e-8 * cm
     supsat::Real = 0.0
     ϵ::Real = 0.01
     ϵₖ::Temperature = 59.7 * K
+end
+
+function get_atmo_parameters(atm::Atmosphere)
+    
 end
 
 mixing_ratio(m::Molecule, atm::Atmosphere) = mixing_ratio(m, atm.mean_molecular_weight, atm.mh)
