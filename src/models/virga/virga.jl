@@ -1,17 +1,21 @@
 module Virga
     using Roots
     
-    using Unitful: Mass, Pressure
+    using Unitful: Mass, Pressure, Temperature
     using Unitful: bar, K
     using Interpolations
 
     using ..Molecules
 
+    include("roots.jl")
+    include("utils.jl")
+    export find_cond_t
+
     function condensation_t(
         gas::Molecule, 
         mh::Real, 
         mmw::Mass, 
-        pressure::Vector{Pressure}=10 .^(-6:8/19:2) .* bar
+        pressure::Vector{<:Pressure}=(10 .^(-6:8/19:2)) * bar
     )
         pressure, Vector{Temperature}([
             find_zero(
@@ -25,10 +29,10 @@ module Virga
 
     function recommend_gas(pressure, temperature, mh, mmw)
         function choice(gas::Molecule)::Bool
-            cond_p, cond_t = condensation_t(gas, mh, mmw)
-            interp_cond_t = map(LinearInterpolation(cond_p, cond_t), pressure)
+            cond_p, cond_t = condensation_t(gas, mh, mmw, pressure)
+            interp_cond_t = map(p -> fixed_interp(p, cond_p, cond_t), pressure)
             diff_curve = temperature .- interp_cond_t
-            ((length(diff_curve[diff_curve .> 0]) > 0) && (length(diff_curve[diff_curve .< 0]) > 0))
+            ((length(diff_curve[diff_curve .> 0*K]) > 0) && (length(diff_curve[diff_curve .< 0*K]) > 0))
         end
         filter(choice, available_molecules())
     end

@@ -14,4 +14,4 @@ struct Fe <: Molecule end
 struct CH₄ <: Molecule end
 struct Al₂O₃ <: Molecule end
 
-available_molecules()::Vector{Molecule} = [TiO₂, Cr, ZnS, NH₃, Na₂S, MnS, MgSiO₃, Mg₂SiO₄, KCl, H₂O, Fe, CH₄, Al₂O₃]
+available_molecules()::Vector{Molecule} = map(x -> x(), [TiO₂, Cr, ZnS, NH₃, Na₂S, MnS, MgSiO₃, Mg₂SiO₄, KCl, H₂O, Fe, CH₄, Al₂O₃])

@@ -1,5 +1,10 @@
 using Unitful: R
+using Unitful: Length, Acceleration, Mass, Temperature, Pressure, DynamicViscosity, Density
+using Unitful: ustrip
 using LinearAlgebra: ⋅
+using Distributions: UnivariateDistribution
+
+using ..Molecules
 
 function advdiff_const(
     qₜ::AbstractFloat,
@@ -12,7 +17,7 @@ function advdiff_const(
     b::AbstractFloat,
     ϵ::AbstractFloat
 )
-    ad_qc = max(0.0, qₜ - ad_qvs)
+    ad_qc = maximum(0.0, qₜ - ad_qvs)
     advdif = ad_qbelow * exp(-ad_rainf * ad_qc * ad_dz / (qₜ * ad_mixl))
     advdif - qₜ
 end
@@ -41,10 +46,10 @@ function vfall(
     grav::Acceleration,
     mw_atmos::Mass,
     mfp::Length,
-    visc::Quantity{<:Number, 𝐌𝐋⁻¹𝐓⁻¹},
+    visc::DynamicViscosity,
     T::Temperature,
-    p::Quantity{<:Number,𝐌𝐋⁻¹𝐓⁻²},
-    rho::Quantity{<:Number,𝐌𝐋⁻³}
+    p::Pressure,
+    rho::Density
     )
 
     cdrag = 0.45 
@@ -142,8 +147,7 @@ rho : Quantity{<:Number,𝐌𝐋⁻³}
     density of particle (g/cm^3)
 """
 function force_balance(vf, r, grav, mw_atmos, mfp, visc, t, p, rho, gas_kinetics=true)
-    R_GAS = 8.3143e7 
-    rho_atmos = p / ( (R_GAS/mw_atmos) * t )
+    rho_atmos = p / ( (R/mw_atmos) * t )
     # coefficients for drag coefficient taken from Khan-Richardson model (Richardson et al. 2002)
     # valid for 1e-2 < Re < 1e5
     a1 = 1.849; b1 = -0.31
@@ -192,6 +196,7 @@ function qvs_below_model(
     pvap_test = vaporpressure(m, t_test, p_test, mh)
     fx = qv_factor * pvap_test / p_test 
     return log(fx) - log(q_below)
+end
 
 """
 Root function used to find condenstation temperature. E.g. 
@@ -210,13 +215,14 @@ mmw : float
 gas_name : str 
     gas name, case sensitive 
 """
-function find_cond_t(t_test, p_test, mh, mmw, m::Molecule)   
+function find_cond_t(t_test::Temperature, p_test::Pressure, mh::Real, mmw::Mass, m::Molecule)   
     #get vapor pressure and correct for masses of atmo and gas 
-    pv = mw(m) / mmw * vaporpressure(m, t_test,p_test, mh=mh) 
+    pv = molecular_weight(m) / mmw * vaporpressure(m, t_test, p_test; mh=mh) 
     #get partial pressure
-    partial_p = mmr(m) * p_test * mh 
-    pv = max(pv, 1e-30)
-    return log10(pv) - log10(partial_p)
+    partial_p = mixing_ratio(m, mmw, mh) * p_test * mh 
+    pv = max(pv, 1e-30 * bar)
+    return log10(pv / partial_p)
+end
 
 function find_rg(fsed, rw, α, d::UnivariateDistribution)
     # params rg, s, loc get folded into the distribution 'd'

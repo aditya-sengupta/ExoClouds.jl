@@ -3,7 +3,7 @@ using UnitfulAstro: dyn
 
 vapormhfactor(::Molecule) = 0.0
 
-function vaporpressure(m::Molecule, T::Temperature, p::Pressure=1e6*dyn, mh::AbstractFloat=1.0)
+function vaporpressure(m::Molecule, T::Temperature, p::Pressure=1e6*dyn; mh::Real=1.0)
     if (mh != 1) && (vapormhfactor(m) == 0.0)
         throw("Warning: no M/H Dependence in vapor pressure curve for $(typeof(m))")
     end
@@ -13,50 +13,50 @@ end
 """
 A power-law model between temperature and vapor pressure. This is the default law, but it may be overridden for individual subtypes.
 """
-function vaporcurve(m::Molecule, T::Temperature, logmh::AbstractFloat)
+function vaporcurve(m::Molecule, T::Temperature, logmh::Real)
     # TODO check if vaporintercept/vaporslope have physical meanings and if so rename
     10.0 ^ (vaporintercept(m) - vaporslope(m) / T - vapormhfactor(m) * logmh) * bar
 end
 
 vaporintercept(::TiO₂) = 9.5489
-vaporslope(::TiO₂) = 32456.8678u"K"
+vaporslope(::TiO₂) = 32456.8678K
 
 vaporintercept(::Cr) = 7.2688
-vaporslope(::Cr) = 20353.0u"K"
+vaporslope(::Cr) = 20353.0K
 
 vaporintercept(::ZnS) = 12.8117
-vaporslope(::ZnS) = 15873.0u"K"
+vaporslope(::ZnS) = 15873.0K
 vapormhfactor(::ZnS) = 1.0
 
-function vaporcurve(::NH₃, T::AbstractFloat, logmh::AbstractFloat)
+function vaporcurve(::NH₃, T::Temperature, logmh::Real)
     exp(-(86596.0 * K^2)/T^2 - (2161.0*K)/T + 10.53) * bar
 end
 vapormhfactor(::NH₃) = 0.0
 
 vaporintercept(::Na₂S) = 8.5497
-vaporslope(::Na₂S) = 13889.0u"K"
+vaporslope(::Na₂S) = 13889.0K
 vapormhfactor(::Na₂S) = 0.5
 
 vaporintercept(::MnS) = 11.5315
-vaporslope(::MnS) = 23810.0u"K"
+vaporslope(::MnS) = 23810.0K
 vapormhfactor(::MnS) = 1.0
 
 vaporintercept(::MgSiO₃) = 11.83
-vaporslope(::MgSiO₃) = 27250.0u"K"
+vaporslope(::MgSiO₃) = 27250.0K
 vapormhfactor(::MgSiO₃) = 1.0
 
 vaporintercept(::Mg₂SiO₄) = 14.88
-vaporslope(::Mg₂SiO₄) = 32488.0u"K"
+vaporslope(::Mg₂SiO₄) = 32488.0K
 vapormhfactor(::Mg₂SiO₄) = 1.4
-function vaporpressure(m::Mg₂SiO₄, T::Temperature, p::Pressure, logmh::AbstractFloat)
+function vaporpressure(m::Mg₂SiO₄, T::Temperature, p::Pressure, logmh::Real)
     # this one doesn't quite fit the signature of the parent, but dispatch will take care of the case where you don't want to specify a p
     vaporcurve(m, T, logmh) * p / 10 ^ (6.2)
 end
 
 vaporintercept(::KCl) = 7.6106
-vaporslope(::KCl) = 11382.0u"K"
+vaporslope(::KCl) = 11382.0K
 
-function vaporcurve(::H₂O, T::Temperature, logmh=0.0, do_buck::Bool=true)
+function vaporcurve(::H₂O, T::Temperature, logmh::Real=0.0; do_buck::Bool=true)
     Tc = ustrip(uconvert(°C, T))
     Tk = ustrip(uconvert(K, T))
     if T < 0°C
@@ -76,9 +76,9 @@ function vaporcurve(::H₂O, T::Temperature, logmh=0.0, do_buck::Bool=true)
                 )
             ) * dyn / cm^2
         end
-    elseif T < 1048u"K"
+    elseif T < 1048K
         if do_buck
-            return buck.BAL * exp((buck.BBL - Tc/buck.BDL)*Tc / (Tc + buck.BCL))
+            return buck.BAL * exp((buck.BBL - Tc/buck.BDL)*Tc / (Tc + buck.BCL)) * dyn / cm^2
         else
             return 10.0 * exp(
                 (1.0 * (Tk^2)) * (
@@ -97,14 +97,14 @@ function vaporcurve(::H₂O, T::Temperature, logmh=0.0, do_buck::Bool=true)
             ) * dyn/cm^2
         end
     else
-        return 600 * bar
+        return 600e6 * dyn / cm^2
     end
 end
 
 vaporintercept(::Fe) = 7.09
-vaporslope(::Fe) = 20833.0u"K"
+vaporslope(::Fe) = 20833.0K
 
-function vaporcurve(::Fe, T::Temperature, logmh=0.0)
+function vaporcurve(::CH₄, T::Temperature, logmh::Real=0.0)
     tcr = methane.TCRIT
     if T < tcr * K
         C = -methane.AMR * methane.AS
@@ -114,7 +114,7 @@ function vaporcurve(::Fe, T::Temperature, logmh=0.0)
         B = -methane.AMR * (methane.ALV + methane.AL * tcr)
     end
     A = methane.PCRIT * tcr^(-C) * exp(-B / tcr)
-    A * T^C * exp(B / T) # here be unit issues 
+    A * (T/K)^C * exp(B * K / T) * dyn/cm^2 # here be unit issues 
 end
 
 vaporintercept(::Al₂O₃) = 17.7
