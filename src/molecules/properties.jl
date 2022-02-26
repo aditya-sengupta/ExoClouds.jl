@@ -5,7 +5,7 @@ function mixing_ratio(m::Molecule, mw_atmos::Mass, mh::AbstractFloat, gas_mmr=no
         ratio = gas_mmr
     end
     if mh == 1
-        return mmr_prop(m) * molecular_weight(m) / mw_atmos
+        return ratio * molecular_weight(m) / mw_atmos
     else
         throw("Alert: no M/H dependence in $(typeof(m)) routine. Consult your local theorist to determine next steps.")
     end

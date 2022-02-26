@@ -11,6 +11,7 @@ module Molecules
     include("molecule.jl")
     include("properties.jl")
     include("vaporpressure.jl")
+    export Molecule, available_molecules
     export TiO₂, Cr, ZnS, NH₃, Na₂S, MnS, MgSiO₃, Mg₂SiO₄, KCl, H₂O, Fe, CH₄, Al₂O₃
     export vaporpressure
     export mw, mmr, ρ

@@ -212,7 +212,7 @@ gas_name : str
 """
 function find_cond_t(t_test, p_test, mh, mmw, m::Molecule)   
     #get vapor pressure and correct for masses of atmo and gas 
-    pv = mw(m) / mmw * vaporpressure(t_test,p_test, mh=mh) 
+    pv = mw(m) / mmw * vaporpressure(m, t_test,p_test, mh=mh) 
     #get partial pressure
     partial_p = mmr(m) * p_test * mh 
     pv = max(pv, 1e-30)

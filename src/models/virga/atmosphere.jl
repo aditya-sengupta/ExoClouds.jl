@@ -22,7 +22,7 @@ gravity(mass, radius) = G * mass / (radius ^ 2)
     fsed::Real = 0.5
     mh::Real = 1.0
     mean_molecular_weight::Mass = 2.2u"u" # TODO unit check i doubt it's this lmao
-    cₚf::Real = 7//2 # erg/K/g, fix typing?
+    cₚf::Real = 7//2
     molecule_diameter::Length = 2.827e-8 * cm
     supsat::Real = 0.0
     ϵ::Real = 0.01
@@ -36,7 +36,7 @@ end
 mixing_ratio(m::Molecule, atm::Atmosphere) = mixing_ratio(m, atm.mean_molecular_weight, atm.mh)
 gas_constant(atm::Atmosphere) = R / atm.mean_molecular_weight
 
-function mean_free_path(T::Temperature, p::Pressure, atm::Atmosphere)
+function mean_free_path(atm::Atmosphere, T::Temperature, p::Pressure)
     n_atmos = p / (k * T)
     1 / (sqrt(2) * (n_atmos * π * atm.molecule_diameter^2))
 end
@@ -47,3 +47,4 @@ atmosphere_density(T::Temperature, p::Pressure, atm::Atmosphere) = p / (gas_cons
 lapse_ratio(T::Temperature, p::Pressure, atm::Atmosphere) = p * derivative(atm.temp_at_pressure, p) / (T / atm.cₚ)
 mixing_length(T::Temperature, p::Pressure, atm::Atmosphere) = max(0.1, lapse_ratio(T, p, atm)) * scale_height(T, atm)
 qvs(T::Temperature, p::Pressure, m::Molecule, atm::Atmosphere) = (atm.supsat + 1) * vaporpressure(m, T, p) / (gas_constant(atm) * T / (atmosphere_density(T, p, atm)))
+

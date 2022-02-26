@@ -38,7 +38,7 @@ function generate_altitude(
     T_p = Spline1D(pres, temp)
     Kz_p = LinearInterpolation(pres, atm.kz) # TODO check out why atm.kz is supposed to be an array?
     if refine_tp
-        println("this looks complicated and unnecessary, I'll do it later")
+        println("refine_tp looks complicated and unnecessary, I'll do it later")
     end
     logp = log.(pres)
     dz = -H.(T_p.(pres[1:end-1])) .* diff(logp)
