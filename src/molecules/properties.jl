@@ -16,23 +16,23 @@ end
 
 molecular_weight(::TiO₂) = 80.0u
 mmr_prop(::TiO₂) = 1.69e-7
-density(::TiO₂) = 4.25*g/cm^3
+density(::TiO₂) = 4.25g/cm^3
 
 molecular_weight(::CH₄) = 16.0u
 mmr_prop(::CH₄) = 4.9e-4
-density(::CH₄) = 0.49*g/cm^3
+density(::CH₄) = 0.49g/cm^3
 
 molecular_weight(::NH₃) = 17.0u
 mmr_prop(::NH₃) = 1.34e-4
-density(::NH₃) = 0.84*g/cm^3
+density(::NH₃) = 0.84g/cm^3
 
 molecular_weight(::H₂O) = 18.0u
 mmr_prop(::H₂O) = 7.54e-4
-density(::H₂O) = 0.93*g/cm^3
+density(::H₂O) = 0.93g/cm^3
 
 molecular_weight(::Fe) = 55.845u
 mmr_prop(::Fe) = 5.78e-5
-density(::Fe) = 7.875*g/cm^3
+density(::Fe) = 7.875g/cm^3
 
 molecular_weight(::KCl) = 74.5u
 function mixing_ratio(m::KCl, mw_atmos::Mass, mh::Real)
@@ -47,23 +47,23 @@ function mixing_ratio(m::KCl, mw_atmos::Mass, mh::Real)
     end
     ratio * molecular_weight(m) / mw_atmos
 end
-density(::KCl) = 1.99*g/cm^3
+density(::KCl) = 1.99g/cm^3
 
 molecular_weight(::MgSiO₃) = 100.4u
 mixing_ratio(::MgSiO₃, mw_atmos::Mass, mh::Real) = 2.75e-3 * mh # this should be manually override-able?
-density(::MgSiO₃) = 3.192*g/cm^3
+density(::MgSiO₃) = 3.192g/cm^3
 
 molecular_weight(::Mg₂SiO₄) = 140.7u
 mmr_prop(::Mg₂SiO₄) = 59.36e-6
-density(::Mg₂SiO₄) = 3.214*g/cm^3
+density(::Mg₂SiO₄) = 3.214g/cm^3
 
 molecular_weight(::MnS) = 87.00u
 mmr_prop(::MnS) = 6.32e-7
-density(::MnS) = 4.0*g/cm^3
+density(::MnS) = 4.0g/cm^3
 
 molecular_weight(::ZnS) = 97.46u
 mmr_prop(::ZnS) = 8.40e-8
-density(::ZnS) = 4.04*g/cm^3
+density(::ZnS) = 4.04g/cm^3
 
 molecular_weight(::Cr) = 51.996u
 function mixing_ratio(m::Cr, mw_atmos::Mass, mh::Real)
@@ -78,12 +78,12 @@ function mixing_ratio(m::Cr, mw_atmos::Mass, mh::Real)
     end
     ratio * molecular_weight(m) / mw_atmos
 end
-density(::Cr) = 7.15*g/cm^3
+density(::Cr) = 7.15g/cm^3
 
 molecular_weight(::Al₂O₃) = 101.961u
 mmr_prop(::Al₂O₃) = 2.51e-6
-density(::Al₂O₃) = 3.987*g/cm^3
+density(::Al₂O₃) = 3.987g/cm^3
 
 molecular_weight(::Na₂S) = 78.05u
 mmr_prop(::Na₂S) = 3.97e-6
-density(::Na₂S) = 1.856*g/cm^3
+density(::Na₂S) = 1.856g/cm^3

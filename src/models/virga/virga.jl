@@ -1,9 +1,10 @@
 module Virga
+    using Interpolations
     using Roots
-    
+    using Plots
+
     using Unitful: Mass, Pressure, Temperature
     using Unitful: bar, K
-    using Interpolations
 
     using ..Molecules
 
@@ -27,15 +28,25 @@ module Virga
         ])
     end
 
-    function recommend_gas(pressure::Vector{<:Pressure}, temperature::Vector{<:Temperature}, mh::Real, mmw::Mass; plot=true)
+    function recommend_gas(pressure::Vector{<:Pressure}, temperature::Vector{<:Temperature}, mh::Real, mmw::Mass; makeplot=true)
+        p = plot(yaxis=:log10, yflip=true, xlabel="Temperature (K)", ylabel="Pressure (bar)", yticks=10.0 .^(-5:2))
+        if makeplot
+            plot!(temperature ./ K, pressure ./ bar, label="User", linestyle=:dash, size=(800,600))
+        end
+
         function choice(gas::Molecule)::Bool
             cond_p, cond_t = condensation_t(gas, mh, mmw)
             interp_cond_t = map(p -> fixed_interp(p, cond_p, cond_t), pressure)
-            
             diff_curve = temperature .- interp_cond_t
-            (maximum(diff_curve) > 0*K) && (minimum(diff_curve) < 0*K)
+            rec = (maximum(diff_curve) > 0K) && (minimum(diff_curve) < 0K)
+            if makeplot
+                width = rec ? 5 : 1
+                plot!(cond_t ./ K, cond_p ./ bar, lw=width, label=typeof(gas))
+            end
+            rec
         end
-        filter(choice, available_molecules())
+
+        filter(choice, available_molecules()), p
     end
 
     export condensation_t, recommend_gas
