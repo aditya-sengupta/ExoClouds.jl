@@ -27,12 +27,13 @@ module Virga
         ])
     end
 
-    function recommend_gas(pressure, temperature, mh, mmw)
+    function recommend_gas(pressure::Vector{<:Pressure}, temperature::Vector{<:Temperature}, mh::Real, mmw::Mass; plot=true)
         function choice(gas::Molecule)::Bool
-            cond_p, cond_t = condensation_t(gas, mh, mmw, pressure)
+            cond_p, cond_t = condensation_t(gas, mh, mmw)
             interp_cond_t = map(p -> fixed_interp(p, cond_p, cond_t), pressure)
+            
             diff_curve = temperature .- interp_cond_t
-            ((length(diff_curve[diff_curve .> 0*K]) > 0) && (length(diff_curve[diff_curve .< 0*K]) > 0))
+            (maximum(diff_curve) > 0*K) && (minimum(diff_curve) < 0*K)
         end
         filter(choice, available_molecules())
     end
