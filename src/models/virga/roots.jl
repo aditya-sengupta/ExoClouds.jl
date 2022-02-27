@@ -217,11 +217,14 @@ gas_name : str
 """
 function find_cond_t(t_test::Temperature, p_test::Pressure, mh::Real, mmw::Mass, m::Molecule)   
     #get vapor pressure and correct for masses of atmo and gas 
-    pv = molecular_weight(m) / mmw * vaporpressure(m, t_test, p_test; mh=mh) 
+    pv = molecular_weight(m) / mmw * vaporpressure(m, t_test, p_test, mh)
     #get partial pressure
     partial_p = mixing_ratio(m, mmw, mh) * p_test * mh 
-    pv = max(pv, 1e-30 * bar)
-    return log10(pv / partial_p)
+    if pv / bar == 0.0
+        return -30 - log10(partial_p / bar)
+    else
+        return log10(pv / bar) - log10(partial_p / bar)
+    end
 end
 
 function find_rg(fsed, rw, α, d::UnivariateDistribution)

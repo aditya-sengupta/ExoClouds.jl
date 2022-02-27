@@ -50,7 +50,7 @@ end
 density(::KCl) = 1.99*g/cm^3
 
 molecular_weight(::MgSiO₃) = 100.4u
-mmr_prop(::MgSiO₃) = 2.75e-3
+mixing_ratio(::MgSiO₃, mw_atmos::Mass, mh::Real) = 2.75e-3 * mh # this should be manually override-able?
 density(::MgSiO₃) = 3.192*g/cm^3
 
 molecular_weight(::Mg₂SiO₄) = 140.7u

@@ -3,7 +3,7 @@ using UnitfulAstro: dyn
 
 vapormhfactor(::Molecule) = 0.0
 
-function vaporpressure(m::Molecule, T::Temperature, p::Pressure=1e6*dyn; mh::Real=1.0)
+function vaporpressure(m::Molecule, T::Temperature, p::Pressure=1*bar, mh::Real=1.0)::Pressure
     if (mh != 1) && (vapormhfactor(m) == 0.0)
         throw("Warning: no M/H Dependence in vapor pressure curve for $(typeof(m))")
     end
@@ -48,9 +48,8 @@ vapormhfactor(::MgSiO₃) = 1.0
 vaporintercept(::Mg₂SiO₄) = 14.88
 vaporslope(::Mg₂SiO₄) = 32488.0K
 vapormhfactor(::Mg₂SiO₄) = 1.4
-function vaporpressure(m::Mg₂SiO₄, T::Temperature, p::Pressure, logmh::Real)
-    # this one doesn't quite fit the signature of the parent, but dispatch will take care of the case where you don't want to specify a p
-    vaporcurve(m, T, logmh) * p / 10 ^ (6.2)
+function vaporpressure(m::Mg₂SiO₄, T::Temperature, p::Pressure, mh::Real)::Pressure
+    vaporcurve(m, T, log10(mh)) * (p / bar)^(-0.2)
 end
 
 vaporintercept(::KCl) = 7.6106
@@ -118,5 +117,5 @@ function vaporcurve(::CH₄, T::Temperature, logmh::Real=0.0)
 end
 
 vaporintercept(::Al₂O₃) = 17.7
-vaporslope(::Al₂O₃) = 45892.6u"K"
+vaporslope(::Al₂O₃) = 45892.6K
 vapormhfactor(::Al₂O₃) = 1.66
