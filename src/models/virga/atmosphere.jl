@@ -1,5 +1,5 @@
 using Unitful: Acceleration, Length, Mass, Temperature, Pressure # dimensions
-using Unitful: cm, K # units
+using Unitful: cm, K, u # units
 using Unitful: k, R, G # constants
 using ForwardDiff
 using Parameters
@@ -21,7 +21,7 @@ gravity(mass, radius) = G * mass / (radius ^ 2)
     # or just keeping the data around (better for sensitivity analysis)
     fsed::Real = 0.5
     mh::Real = 1.0
-    mean_molecular_weight::Mass = 2.2u"u" # TODO unit check i doubt it's this lmao
+    mean_molecular_weight::Mass = 2.2u
     cₚf::Real = 7//2
     molecule_diameter::Length = 2.827e-8 * cm
     supsat::Real = 0.0
