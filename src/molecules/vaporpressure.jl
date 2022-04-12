@@ -132,4 +132,4 @@ vaporintercept(::Al₂O₃) = 17.7
 vaporslope(::Al₂O₃) = 45892.6K
 vapormhfactor(::Al₂O₃) = 1.66
 
-function vaporcurve(::H₂SO₄)
+# function vaporcurve(::H₂SO₄) end
