@@ -3,30 +3,36 @@
 using Unitful
 using Unitful: k, R
 
-function critical_radius(M::Mass, σₛ, ρₚ, S, T::Temperature)
+function critical_radius(M::Mass, σₛ::Energy, ρₚ::Density, S::Real, T::Temperature)
     return 2 * M * σₛ / (ρₚ * R * T * log(S))
 end
 
-function diffusion_rate(p::Pressure, m::Mass, T::Temperature) # p for partial pressure
-    return p / sqrt(2π * m * k * T)
+function diffusion_rate(m::Molecule, p::Pressure, T::Temperature) # p for partial pressure
+    return p * mixing_ratio(m) / sqrt(2π * molecular_weight(m) * k * T)
 end
 
 function zeldovich(F, T, gₘ)
     return sqrt(F / (3π * k * T * gₘ^2))
 end
 
-function homogeneous_nuc_rate(M::Mass, σₛ::Energy, ρₚ::Density, S::Real, T::Temperature, n, Z,)
-    a = critical_radius(M, σₛ, ρₚ, S, T)
+"""
+Homogeneous nucleation.
+
+m - the molecule nucleating
+
+"""
+function nucleation(m::Molecule, σₛ::Energy, ρₚ::Density, S::Real, p::Pressure, T::Temperature, n::Integer, gₘ::Integer)
+    a = critical_radius(molecular_weight(m), σₛ, ρₚ, S, T)
     F = (4π/3) * σₛ * a^2
-    Φ = diffusion_rate(p, m, T) # what is m? need to loop this by particle?
-    Z = zeldovich(F, T, gₘ) # what is gₘ
+    Φ = diffusion_rate(m, p, T)
+    Z = zeldovich(F, T, gₘ)
     return 4π * a^2 * Φ * Z * n * exp(-F / (k * T))
 end
 
-function heterogeneous_nuc_rate() # to figure this out
-    Φ = diffusion_rate(p, m, T) # what is m? need to loop this by particle?
+function nucleation(agent::Molecule, surface::Molecule, ..., p::Pressure, T::Temperature, gₘ::Integer) 
+    Φ = diffusion_rate(agent, p, T)
     c_surf = (Φ / ν) * exp(F_des / (k * T))
-    Z = zeldovich(F, T, gₘ) # what is gₘ
+    Z = zeldovich(F, T, gₘ)
     x = r / a
     ϕ = sqrt(1 - 2 * μ * x + x^2)
     f₀ = (x - μ) / ϕ

@@ -10,6 +10,11 @@ function vaporpressure(m::Molecule, T::Temperature, p::Pressure=1*bar, mh::Real=
     vaporcurve(m, T, log10(mh))
 end
 
+# for almost every species, this is true
+function vaporpressure_ice(m::Molecule, T::Temperature, p::Pressure=1*bar, mh::Real=1.0)::Pressure
+    vaporpressure(m, T, p, mh)
+end
+
 """
 A power-law model between temperature and vapor pressure. This is the default law, but it may be overridden for individual subtypes.
 """
@@ -19,7 +24,7 @@ function vaporcurve(m::Molecule, T::Temperature, logmh::Real)
 end
 
 vaporintercept(::TiO₂) = 9.5489
-vaporslope(::TiO₂) = 32456.8678K
+vaporslope(::TiO₂) = 32456.8678K # or 34602K according to "Diana email" (exocarma/carma_condensate_mod.F90)
 
 vaporintercept(::Cr) = 7.2688
 vaporslope(::Cr) = 20353.0K
@@ -100,6 +105,13 @@ function vaporcurve(::H₂O, T::Temperature, logmh::Real=0.0; do_buck::Bool=true
     end
 end
 
+function vaporpressure_ice(::H₂O, T::Temperature, p::Pressure=1*bar, mh::Real=1.0)
+    Tc = ustrip(uconvert(°C, T))
+    # Buck 1981
+    return buck.BAI * exp((buck.BBI - Tc/buck.BDI)*Tc / (Tc + buck.BCI)) * dyn / cm^2
+    # Goff 1946: return 10.0 * 10^(-9.09718 * (273.16 / Tk - 1) - 3.56654 * log10(273.16 / Tk) + 0.876793 * (1 - Tk / 273.16) + log10(6.1071)) * 100 * dyn/cm^2
+end
+
 vaporintercept(::Fe) = 7.09
 vaporslope(::Fe) = 20833.0K
 
@@ -113,9 +125,11 @@ function vaporcurve(::CH₄, T::Temperature, logmh::Real=0.0)
         B = -methane.AMR * (methane.ALV + methane.AL * tcr)
     end
     A = methane.PCRIT * tcr^(-C) * exp(-B / tcr)
-    A * (T/K)^C * exp(B * K / T) * dyn/cm^2 # here be unit issues 
+    A * (T/K)^C * exp(B * K / T) * dyn/cm^2 
 end
 
 vaporintercept(::Al₂O₃) = 17.7
 vaporslope(::Al₂O₃) = 45892.6K
 vapormhfactor(::Al₂O₃) = 1.66
+
+function vaporcurve(::H₂SO₄)
