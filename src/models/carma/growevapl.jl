@@ -155,5 +155,8 @@ FORTRAN loops this over the particle groups, which we'll do in the main loop.
 This is a function of just "particle", which translates in FORTRAN to "igroup".
 """
 function growevapl(state::State, particle::Molecule)
-
+    # can't finish this yet because ratt1,2,3 aren't defined as far as I can see
+    # I think it is all managing advancing the state by a timestep because it's doing a lot of transport over bin boundaries
+    # and I don't need to do any of that because of the continuous approach
+    # growlg?
 end
