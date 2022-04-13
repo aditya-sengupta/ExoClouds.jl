@@ -3,6 +3,23 @@ using Unitful: R
 
 @derived_dimension MassDiffusivity 𝐋^2*𝐓^-1 true
 
+arat() = 1 # for now
+
+function Ft_Fv(z::Length, Dp, κₐ, is_ice::Bool)
+    reyn_shape = re(z)
+    schmidt = rmu(z) / (mw_atmos * Dp)
+    prandtl = rmu(z) * c_p / κₐ
+    function _help(n)
+        x = n^(1/3) * sqrt(reyn_shape)
+        if is_ice
+            return (x < 1) ? 1 + 0.14*x^2 : 0.86 + 0.28*x
+        else
+            return (x < 1) ? 1 + 0.108*x^2 : 0.78 + 0.308*x
+        end
+    end
+    return _help(prandtl), _help(schmidt)
+end
+
 function Kn(D::MassDiffusivity, r::Length, M::Mass, T::Temperature)
     return (3 * D / r) * sqrt(π * M / (8 * R * T))
 end
@@ -23,11 +40,13 @@ function κ_condensate(D::MassDiffusivity, r::Length, M::Mass, T::Temperature, �
     return κ / (1 + λₜ * Knₜ_val)
 end
 
-function dmp_dt(molecule::Molecule, D, r, M, T, κ, Cₚ, μ, ρ, S) # Jacobson 16.13 but with the numerator of Gao 2018 (A16)
+function dmp_dt(molecule::Molecule, D, r, M, T, κ, Cₚ, μ, ρ, S, F_T, F_v) # Jacobson 16.13 but with the numerator of Gao 2018 (A16)
     Dp = D_condensate(D, r, M, T, κ, Cₚ, μ, ρ)
-    Ak = exp(2 * M * σₛ / (ρₚ * R * T * r))
+    Ak = akelvin(molecule, T) # exp(2 * M * σₛ / (ρₚ * R * T * r))
     κₐ = κ_condensate(D, r, M, T, κ, Cₚ, μ, ρ)
+    @warn "need good handling of the CARMA is_grp_ice"
+    Ft, Fv = Ft_Fv(z, Dp, κₐ, false) 
     num = 4π * r * Dp * pₛ * (S - Ak)
-    denom = ((Dp * L * pₛ * Ak) / (κₐ * T)) * (L * m / (R * T) - 1) + R * T / m
+    denom = ((Dp * L * pₛ) / (κₐ * T)) * (L * M / (R * T) - 1) * (1 / F_T) + R * T / (M * F_v)
     return num / denom
 end

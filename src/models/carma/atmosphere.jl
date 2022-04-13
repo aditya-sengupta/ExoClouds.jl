@@ -34,6 +34,7 @@ The structural model aspects of a CARMA run.
     z::Vertical
     mean_molecular_weight::Mass = 2.2u
     # metallicity::Real
+    cₚ::Real = 7//2
 end
 
 gravity(atm::Atmosphere, z::Length)::Acceleration = atm.surface_gravity * atm.planet_radius^2 / (atm.planet_radius + z)^2
