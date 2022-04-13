@@ -122,7 +122,7 @@ function pheat(atm::Atmosphere, particle::Particle, m::Molecule, r::Length, T::T
     g2 = growth_radiation(particle, m, T)
 
     pvap = vaporpressure(particle, m, T, p, atm.mh)
-    ss = supersaturations(m, conc, T; relative_humidity=relative_humidity, cloud_frac=cloud_frac)[particle.is_ice ? 2 : 1]
+    ss = supersaturation(particle, m, conc, T; relative_humidity=relative_humidity, cloud_frac=cloud_frac)
     
     if (!do_pheat || !do_mie)
         dm_dt = pvap * (ss + 1 - akas) * g0 / (1 + g0 * g1 * pvap)

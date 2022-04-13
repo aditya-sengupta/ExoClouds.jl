@@ -23,3 +23,15 @@ function latent_heat(p::Particle, m::Molecule, T::Temperature)
         rlh = latent_heat_evap(m, T)
     end
 end
+
+function akelvin(p::Particle, m::Molecule, T::Temperature)
+    if p.is_ice
+        return akelvin_ice(m, T)
+    else
+        return akelvin(m, T)
+    end
+end
+
+function supersaturation(p::Particle, m::Molecule, concentration::Density, T::Temperature; relative_humidity=1, cloud_frac=1)
+    ssl, ssi = supersaturations()
+end
