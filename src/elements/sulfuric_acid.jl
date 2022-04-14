@@ -35,8 +35,6 @@ dnc1 = [0,  -0.000435022, -0.000479481, -0.000531558, -0.000622448,
 -0.00100934, -0.000998299, -0.000990961, -0.000985845, -0.000984529,  
 -0.000989315]
 
-water, acid = H₂O(), H₂SO₄()
-
 function density(::H₂SO₄; wtp::Real=0, T::Temperature=0K)
     @warn "Make sure you passed in the correct kwargs to density for H₂SO₄! The default call will probably give something nonsensical."
     if (wtp < 0.0 || wtp > 100.0) then
@@ -73,13 +71,14 @@ function surface_tension(::H₂SO₄, T::Temperature=0K; wtp::Real=0)
 end
 
 function wtpct_tabaz(T::Temperature, concentration::Density)
+    w = water()
     # Get number density of water (/cm3) from mass concentration (g/cm3)
-    h2o_num = concentration / molecular_weight(water)
+    h2o_num = concentration / molecular_weight(w)
 
     # Get partial pressure of water (dynes/cm2) from concentration (/cm3)
     # Ideal gas law: P=nkT
     p_h2o = h2o_num * k * T
-    vp_h2o = vaporpressure(water, T)
+    vp_h2o = vaporpressure(w, T)
 
     #  Prevent a NaN calculation  
     #  In the upper thermosphere p_h2o can be very low and vp_h2o can be very high

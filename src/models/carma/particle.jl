@@ -2,13 +2,22 @@
 A Particle is a CARMA Group, but with a better name.
 
 CARMA has what I'll call a "group-first" structure, where groups are the smallest units you operate on, and elements are defined by their relations to groups. This is convenient when you're writing the main loop, but inconvenient if you want to modify the physics because it means you have to nest calls awkwardly even when you're asking for invariant facts about chemical elements. Put simply, calls that should have nothing to do with groups end up having to do with groups, and that makes the code awkward. It's also not very amenable to writing other models within the same physics. So what I'm doing is writing code for molecules first, writing that in its own module, and having particles know what molecules they've got within them.
+
+I've realized the difference here is I'm thinking about the problem in a Lagrangian (particle-first) way, and CARMA is an Eulerian (field-first) solver. I think Lagrangian is probably the better way for reasons I wrote in the essay, but I'll try not to rock the boat too much just yet.
 """
 @with_kw struct Particle 
-    elements::Vector{Molecule}
+    elements::Vector{Element}
+    radius_min::Length
+    rad_ratio::Real
+    aspect_ratio::Real=1 # eshape
     is_ice::Bool=false
+    ref_idx::Real=1.0
+    is_cloud::Bool=true
 end
 
-function vaporpressure(particle::Particle, m::Molecule, T::Temperature, p::Pressure=1*bar, mh::Real=1.0)
+# all the properties are the same for each state of matter unless it's water, in which case you take "water" or "ice"
+"""
+function vaporpressure(particle::Particle, e::Element, T::Temperature, p::Pressure=1*bar, mh::Real=1.0)
     if particle.is_ice
         return vaporpressure_ice(m, T, p, mh)
     else
@@ -16,7 +25,7 @@ function vaporpressure(particle::Particle, m::Molecule, T::Temperature, p::Press
     end
 end
 
-function latent_heat(p::Particle, m::Molecule, T::Temperature)
+function latent_heat(p::Particle, e::Element, T::Temperature)
     if p.is_ice
         rlh = latent_heat_evap(m, T) + latent_heat_melt(m, T)
     else
@@ -24,7 +33,7 @@ function latent_heat(p::Particle, m::Molecule, T::Temperature)
     end
 end
 
-function akelvin(p::Particle, m::Molecule, T::Temperature)
+function akelvin(p::Particle, e::Element, T::Temperature)
     if p.is_ice
         return akelvin_ice(m, T)
     else
@@ -32,6 +41,6 @@ function akelvin(p::Particle, m::Molecule, T::Temperature)
     end
 end
 
-function supersaturation(p::Particle, m::Molecule, concentration::Density, T::Temperature; relative_humidity=1, cloud_frac=1)
+function supersaturation(p::Particle, e::Element, concentration::Density, T::Temperature; relative_humidity=1, cloud_frac=1)
     ssl, ssi = supersaturations()
-end
+end"""

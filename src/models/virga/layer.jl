@@ -59,7 +59,7 @@ rmin : float
 nrad : int 
     Number of radii on Mie grid
 d_molecule : float 
-    diameter of atmospheric molecule (cm) (Rosner, 2000)
+    diameter of atmospheric element (cm) (Rosner, 2000)
     (3.711e-8 for air, 3.798e-8 for N2, 2.827e-8 for H2)
     Set in Atmosphere constants 
 eps_k : float 

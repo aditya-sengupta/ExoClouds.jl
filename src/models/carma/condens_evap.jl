@@ -40,9 +40,9 @@ function κ_condensate(D::MassDiffusivity, r::Length, M::Mass, T::Temperature, �
     return κ / (1 + λₜ * Knₜ_val)
 end
 
-function dmp_dt(molecule::Molecule, D, r, M, T, κ, Cₚ, μ, ρ, S, F_T, F_v) # Jacobson 16.13 but with the numerator of Gao 2018 (A16)
+function dmp_dt(element::Element, D, r, M, T, κ, Cₚ, μ, ρ, S, F_T, F_v) # Jacobson 16.13 but with the numerator of Gao 2018 (A16)
     Dp = D_condensate(D, r, M, T, κ, Cₚ, μ, ρ)
-    Ak = akelvin(molecule, T) # exp(2 * M * σₛ / (ρₚ * R * T * r))
+    Ak = akelvin(element, T) # exp(2 * M * σₛ / (ρₚ * R * T * r))
     κₐ = κ_condensate(D, r, M, T, κ, Cₚ, μ, ρ)
     @warn "need good handling of the CARMA is_grp_ice"
     Ft, Fv = Ft_Fv(z, Dp, κₐ, false) 

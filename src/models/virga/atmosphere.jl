@@ -33,7 +33,7 @@ function get_atmo_parameters(atm::Atmosphere)
     
 end
 
-mixing_ratio(m::Molecule, atm::Atmosphere) = mixing_ratio(m, atm.mean_molecular_weight, atm.mh)
+mixing_ratio(e::Element, atm::Atmosphere) = mixing_ratio(m, atm.mean_molecular_weight, atm.mh)
 gas_constant(atm::Atmosphere) = R / atm.mean_molecular_weight
 
 function mean_free_path(atm::Atmosphere, T::Temperature, p::Pressure)
@@ -46,5 +46,5 @@ atmosphere_density(T::Temperature, p::Pressure, atm::Atmosphere) = p / (gas_cons
 # dHdP to be handled with autodiff
 lapse_ratio(T::Temperature, p::Pressure, atm::Atmosphere) = p * derivative(atm.temp_at_pressure, p) / (T / atm.cₚ)
 mixing_length(T::Temperature, p::Pressure, atm::Atmosphere) = max(0.1, lapse_ratio(T, p, atm)) * scale_height(T, atm)
-qvs(T::Temperature, p::Pressure, m::Molecule, atm::Atmosphere) = (atm.supsat + 1) * vaporpressure(m, T, p) / (gas_constant(atm) * T / (atmosphere_density(T, p, atm)))
+qvs(T::Temperature, p::Pressure, e::Element, atm::Atmosphere) = (atm.supsat + 1) * vaporpressure(m, T, p) / (gas_constant(atm) * T / (atmosphere_density(T, p, atm)))
 

@@ -7,12 +7,12 @@ using DifferentialEquations
 dq / dz = -fsed * qc(q, z) / mixlength(q, z)
 Ackerman and Marley (2001) equation 4
 This treats each condensate independently, so we express that structurally
-by passing in a molecule to this function, and broadcasting this over each
-molecule we care about.
+by passing in a element to this function, and broadcasting this over each
+element we care about.
 
 # TODO fix f_rain = 1, qc = q_t and run Lunine et al model for comparison
 """
-function make_AM4_problem(atm::Atmosphere, zdata::Array{Length}, m::Molecule)
+function make_AM4_problem(atm::Atmosphere, zdata::Array{Length}, e::Element)
     # virga's calc_qc, but only the model and not the numerical solution
     # or the steps after: I'll plan to come back to this
     function AM4(z::Float64, q::Float64)

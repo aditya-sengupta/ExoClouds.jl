@@ -13,7 +13,7 @@ module Virga
     export find_cond_t
 
     function condensation_t(
-        gas::Molecule, 
+        gas::Element, 
         mh::Real, 
         mmw::Mass, 
         pressure::Vector{<:Pressure}=(10 .^(-6:8/19:2)) * bar
@@ -34,7 +34,7 @@ module Virga
             plot!(temperature ./ K, pressure ./ bar, label="User", linestyle=:dash, size=(800,600))
         end
 
-        function choice(gas::Molecule)::Bool
+        function choice(gas::Element)::Bool
             cond_p, cond_t = condensation_t(gas, mh, mmw)
             interp_cond_t = map(p -> fixed_interp(p, cond_p, cond_t), pressure)
             diff_curve = temperature .- interp_cond_t

@@ -1,10 +1,10 @@
 # this has to be included after vaporpressure.jl, because it relies on the coeffs there
 
-function latent_heat_melt(m::Molecule, T::Temperature) 
-    latent_heat_evap(m, T)
+function latent_heat_melt(e::Element, T::Temperature) 
+    latent_heat_evap(e, T)
 end
 
-latent_heat_evap(m::Molecule, T::Temperature) = vaporslope(m) * log(10) * R / molar_weight(m) 
+latent_heat_evap(e::Element, T::Temperature) = vaporslope(e) * log(10) * R / molar_weight(e) 
 # I can't find this formula in the paper referenced in the CARMA comments (Charnay et al. 2015, ApJL 813, L1), and its model also doesn't seem to use most of the condensates to which we're applying the formula. So I'll take this on faith for now but I'm skeptical (especially with the log 10).
 
 latent_heat_evap(::H₂O, T::Temperature) = 2.501e10 * cm^2/s^2

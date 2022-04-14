@@ -11,9 +11,9 @@ Parameters
 ----------
 state : ...
 
-condensate : Molecule
+condensate : Element
 
-gas : Molecule
+gas : Element
     The gas undergoing growth and inducing condensation.
 
 Returns
@@ -21,9 +21,9 @@ Returns
 total_ice : Mass
 total_liquid : Mass
 """
-function condensate_quantities(state::State, condensate::Molecule, gas::Molecule)::Tuple{Mass,Mass} end
+function condensate_quantities(state::State, condensate::Element, gas::Element)::Tuple{Mass,Mass} end
 
-supsat_core(gas::Molecule, concentration::Density, T::Temperature, pvap::Pressure) = (concentration * (R / molar_weight(gas)) * T / pvap)
+supsat_core(gas::Element, concentration::Density, T::Temperature, pvap::Pressure) = (concentration * (R / molar_weight(gas)) * T / pvap)
 
 # reaction saturation ratio correction for type III reactions (Helling and Woitke 2006)
 supsat_core(gas::Union{Na₂S,Mg₂SiO₄,Al₂O₃}, concentration::Density, T::Temperature, pvap::Pressure) = sqrt(concentration * (R / molar_weight(gas)) * T / pvap)
@@ -33,7 +33,7 @@ Calculates supersaturation for a gas over liquid water/ice.
 warning: if you want to vary metallicity/pressure in the vapor pressure formula, you'll have to add in some kwargs
 Assumes the cloud is an ice cloud.
 """
-function supersaturations(gas::Molecule, concentration::Density, T::Temperature; relative_humidity::Real=0.0, cloud_frac::Real=1.0)::Tuple{Real,Real}
+function supersaturations(gas::Element, concentration::Density, T::Temperature; relative_humidity::Real=0.0, cloud_frac::Real=1.0)::Tuple{Real,Real}
     α = relative_humidity * (1 - cloud_frac) + cloud_frac
     pvap_liquid = vaporpressure(gas, T)
     pvap_ice = vaporpressure_ice(gas, T)

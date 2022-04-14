@@ -1,26 +1,26 @@
 using Unitful: cm, bar, °C, K
 using UnitfulAstro: dyn
 
-vapormhfactor(::Molecule) = 0.0
+vapormhfactor(::Element) = 0.0
 
-function vaporpressure(m::Molecule, T::Temperature, p::Pressure=1*bar, mh::Real=1.0)::Pressure
-    if (mh != 1) && (vapormhfactor(m) == 0.0)
-        throw("Warning: no M/H Dependence in vapor pressure curve for $(typeof(m))")
+function vaporpressure(e::Element, T::Temperature, p::Pressure=1*bar, mh::Real=1.0)::Pressure
+    if (mh != 1) && (vapormhfactor(e) == 0.0)
+        throw("Warning: no M/H Dependence in vapor pressure curve for $(typeof(e))")
     end
-    vaporcurve(m, T, log10(mh))
+    vaporcurve(e, T, log10(eh))
 end
 
 # for almost every species, this is true
-function vaporpressure_ice(m::Molecule, T::Temperature, p::Pressure=1*bar, mh::Real=1.0)::Pressure
-    vaporpressure(m, T, p, mh)
+function vaporpressure_ice(e::Element, T::Temperature, p::Pressure=1*bar, mh::Real=1.0)::Pressure
+    vaporpressure(e, T, p, mh)
 end
 
 """
 A power-law model between temperature and vapor pressure. This is the default law, but it may be overridden for individual subtypes.
 """
-function vaporcurve(m::Molecule, T::Temperature, logmh::Real)
+function vaporcurve(e::Element, T::Temperature, logmh::Real)
     # TODO check if vaporintercept/vaporslope have physical meanings and if so rename
-    10.0 ^ (vaporintercept(m) - vaporslope(m) / T - vapormhfactor(m) * logmh) * bar
+    10.0 ^ (vaporintercept(e) - vaporslope(e) / T - vapormhfactor(e) * logmh) * bar
 end
 
 vaporintercept(::TiO₂) = 9.5489
@@ -53,34 +53,40 @@ vapormhfactor(::MgSiO₃) = 1.0
 vaporintercept(::Mg₂SiO₄) = 14.88
 vaporslope(::Mg₂SiO₄) = 32488.0K
 vapormhfactor(::Mg₂SiO₄) = 1.4
-function vaporpressure(m::Mg₂SiO₄, T::Temperature, p::Pressure, mh::Real)::Pressure
-    vaporcurve(m, T, log10(mh)) * (p / bar)^(-0.2)
+function vaporpressure(e::Mg₂SiO₄, T::Temperature, p::Pressure, mh::Real)::Pressure
+    vaporcurve(e, T, log10(eh)) * (p / bar)^(-0.2)
 end
 
 vaporintercept(::KCl) = 7.6106
 vaporslope(::KCl) = 11382.0K
 
-function vaporcurve(::H₂O, T::Temperature, logmh::Real=0.0; do_buck::Bool=true)
+function vaporcurve(::ice, T::Temperature, logmh::Real=0.0; do_buck::Bool=true)
+    @assert T < 0°C "ice has to be cold"
     Tc = ustrip(uconvert(°C, T))
     Tk = ustrip(uconvert(K, T))
-    if T < 0°C
-        if do_buck
-            # bit annoying to type, but keeps the namespace clean
-            return buck.BAI * exp((buck.BBI - Tc/buck.BDI)*Tc / (Tc + buck.BCI)) * dyn / cm^2
-        else
-            return 10.0 * exp(
-                1.0 / Tk * (
-                    wexler.HH0 + (
-                        wexler.HH1 + wexler.HH5 * log(Tk) + (
-                            wexler.HH2 + (
-                                wexler.HH3 + wexler.HH4 * Tk
-                            ) * Tk
+    if do_buck
+        # bit annoying to type, but keeps the namespace clean
+        return buck.BAI * exp((buck.BBI - Tc/buck.BDI)*Tc / (Tc + buck.BCI)) * dyn / cm^2
+    else
+        return 10.0 * exp(
+            1.0 / Tk * (
+                wexler.HH0 + (
+                    wexler.HH1 + wexler.HH5 * log(Tk) + (
+                        wexler.HH2 + (
+                            wexler.HH3 + wexler.HH4 * Tk
                         ) * Tk
                     ) * Tk
-                )
-            ) * dyn / cm^2
-        end
-    elseif T < 1048K
+                ) * Tk
+            )
+        ) * dyn / cm^2
+    end
+end
+
+function vaporcurve(::water, T::Temperature, logmh::Real=0.0; do_buck::Bool=true)
+    @assert T > 0°C "water has to be warm"
+    Tc = ustrip(uconvert(°C, T))
+    Tk = ustrip(uconvert(K, T))
+    if T < 1048K
         if do_buck
             return buck.BAL * exp((buck.BBL - Tc/buck.BDL)*Tc / (Tc + buck.BCL)) * dyn / cm^2
         else
@@ -105,12 +111,12 @@ function vaporcurve(::H₂O, T::Temperature, logmh::Real=0.0; do_buck::Bool=true
     end
 end
 
-function vaporpressure_ice(::H₂O, T::Temperature, p::Pressure=1*bar, mh::Real=1.0)
+"""function vaporpressure(::ice, T::Temperature, p::Pressure=1*bar, mh::Real=1.0)
     Tc = ustrip(uconvert(°C, T))
     # Buck 1981
     return buck.BAI * exp((buck.BBI - Tc/buck.BDI)*Tc / (Tc + buck.BCI)) * dyn / cm^2
     # Goff 1946: return 10.0 * 10^(-9.09718 * (273.16 / Tk - 1) - 3.56654 * log10(273.16 / Tk) + 0.876793 * (1 - Tk / 273.16) + log10(6.1071)) * 100 * dyn/cm^2
-end
+end"""
 
 vaporintercept(::Fe) = 7.09
 vaporslope(::Fe) = 20833.0K
@@ -119,10 +125,10 @@ function vaporcurve(::CH₄, T::Temperature, logmh::Real=0.0)
     tcr = methane.TCRIT
     if T < tcr * K
         C = -methane.AMR * methane.AS
-        B = -methane.AMR * (methane.ALS + methane.AS + tcr)
+        B = -methane.AMR * (eethane.ALS + methane.AS + tcr)
     else
         C = -methane.AMR * methane.AL
-        B = -methane.AMR * (methane.ALV + methane.AL * tcr)
+        B = -methane.AMR * (eethane.ALV + methane.AL * tcr)
     end
     A = methane.PCRIT * tcr^(-C) * exp(-B / tcr)
     A * (T/K)^C * exp(B * K / T) * dyn/cm^2 

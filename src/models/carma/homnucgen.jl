@@ -7,7 +7,7 @@ function critical_radius(M::Mass, σₛ::Energy, ρₚ::Density, S::Real, T::Tem
     return 2 * M * σₛ / (ρₚ * R * T * log(S))
 end
 
-function diffusion_rate(m::Molecule, p::Pressure, T::Temperature) # p for partial pressure
+function diffusion_rate(e::Element, p::Pressure, T::Temperature) # p for partial pressure
     return p * mixing_ratio(m) / sqrt(2π * molecular_weight(m) * k * T)
 end
 
@@ -18,10 +18,10 @@ end
 """
 Homogeneous nucleation.
 
-m - the molecule nucleating
+m - the element nucleating
 
 """
-function nucleation(m::Molecule, σₛ::Energy, ρₚ::Density, S::Real, p::Pressure, T::Temperature, n::Integer, gₘ::Integer)
+function nucleation(e::Element, σₛ::Energy, ρₚ::Density, S::Real, p::Pressure, T::Temperature, n::Integer, gₘ::Integer)
     a = critical_radius(molecular_weight(m), σₛ, ρₚ, S, T)
     F = (4π/3) * σₛ * a^2
     Φ = diffusion_rate(m, p, T)
@@ -29,7 +29,7 @@ function nucleation(m::Molecule, σₛ::Energy, ρₚ::Density, S::Real, p::Pres
     return 4π * a^2 * Φ * Z * n * exp(-F / (k * T))
 end
 
-function nucleation(agent::Molecule, surface::Molecule, ..., p::Pressure, T::Temperature, gₘ::Integer) 
+function nucleation(agent::Element, surface::Element, ..., p::Pressure, T::Temperature, gₘ::Integer) 
     Φ = diffusion_rate(agent, p, T)
     c_surf = (Φ / ν) * exp(F_des / (k * T))
     Z = zeldovich(F, T, gₘ)

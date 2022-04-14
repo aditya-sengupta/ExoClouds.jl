@@ -53,7 +53,7 @@ qc_path : ndarray
 """
 function eddysed(
     atm::Atmosphere,
-    condensibles::Vector{Molecule}
+    condensibles::Vector{Element}
     t_top, p_top, t_mid, p_mid, 
     b, z_top, z_alpha, z_min, param,
     sig, rmin, nrad;

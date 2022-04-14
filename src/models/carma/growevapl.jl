@@ -73,7 +73,7 @@ end
 """
 CARMA's "gro": growth due to diffusion processes
 """
-function growth_diffusion(m::Molecule, r::Length, T::Temperature, Dp::MassDiffusivity, fv::Real)
+function growth_diffusion(e::Element, r::Length, T::Temperature, Dp::MassDiffusivity, fv::Real)
     br = getwetr(r, T) # low
     return 4π * br * Dp * fv * molar_weight(m) / (k * T * Na)
 end
@@ -81,7 +81,7 @@ end
 """
 CARMA's "gro1": growth due to conduction
 """
-function growth_conduction(particle::Particle, m::Molecule, r::Length, T::Temperature, κₐ, ft::Real)
+function growth_conduction(particle::Particle, e::Element, r::Length, T::Temperature, κₐ, ft::Real)
     rlh = latent_heat(particle, m, T)
     br = getwetr(r, T) # low 
     return molar_weight(m) * rlh^2 / (R * T^2 * ft * κₐ) / (4π * br)
@@ -90,7 +90,7 @@ end
 """
 CARMA's "gro2": growth due to radiation
 """
-function growth_radiation(particle::Particle, m::Molecule, T::Temperature)
+function growth_radiation(particle::Particle, e::Element, T::Temperature)
     return 1 / latent_heat(particle, m, T)
 end
 
@@ -101,7 +101,7 @@ rad_incident is FORTRAN's radint, to be set by the user.
 
 This should be called at a particular (r, T) which the state knows.
 """
-function pheat(atm::Atmosphere, particle::Particle, m::Molecule, r::Length, T::Temperature, p::Pressure, conc::Density, relative_humidity::Real, cloud_frac::Real, rad_incident=0, λ::Vector=[], dλ::Vector=[];
+function pheat(atm::Atmosphere, particle::Particle, e::Element, r::Length, T::Temperature, p::Pressure, conc::Density, relative_humidity::Real, cloud_frac::Real, rad_incident=0, λ::Vector=[], dλ::Vector=[];
     NWAVE=0, POWMAX=85, wtpct=0.1, do_pheat=true, do_pheatatm=true, do_mie=true, do_wave_emit=true, max_iter=10) 
     if particle.is_ice
         expon = max(-POWMAX, akelvin_ice(m, T) / getwetr(r, T))
@@ -154,7 +154,7 @@ end
 FORTRAN loops this over the particle groups, which we'll do in the main loop.
 This is a function of just "particle", which translates in FORTRAN to "igroup".
 """
-function growevapl(state::State, particle::Molecule)
+function growevapl(state::State, particle::Element)
     # can't finish this yet because ratt1,2,3 aren't defined as far as I can see
     # I think it is all managing advancing the state by a timestep because it's doing a lot of transport over bin boundaries
     # and I don't need to do any of that because of the continuous approach

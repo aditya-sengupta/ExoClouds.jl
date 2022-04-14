@@ -4,28 +4,29 @@ using Unitful: Na
 
 # CARMA has, but we do not have: S₂, S₈, NaCl, CO
 
-function diffusivity(m::Molecule, T::Temperature, mw_atmos::Mass)
+function diffusivity(e::Element, T::Temperature, mw_atmos::Mass)
     @warn "The dimensions of this should come out to cm^2/s, but I don't know if it actually does"
-    mw_m = molecular_weight(m)
-    return (1/cation_count(m)) * 5 / (16 * Na * collision_diameter(m) * mw_atmos * colint) * sqrt(R * T * mw_atmos * (mw_m + mw_atmos) / (2π * mw_m))
+    mw_m = molecular_weight(e)
+    diff = (1/cation_count(e)) * 5 / (16 * Na * collision_diameter(e) * mw_atmos * colint) * sqrt(R * T * mw_atmos * (mw_m + mw_atmos) / (2π * mw_m))
+    return diff
 end
 
-cation_count(m::Molecule) = 1
+cation_count(e::Element) = 1
 
-molecular_weight(m::Molecule) = dimless_weight(m) * u
-molar_weight(m::Molecule) = dimless_weight(m) * g
-density_ice(m::Molecule; kwargs...) = density(m::Molecule; kwargs...)
+molecular_weight(e::Element) = dimless_weight(e) * u
+molar_weight(e::Element) = dimless_weight(e) * g
+density_ice(e::Element; kwargs...) = density(e::Element; kwargs...)
 
-function mixing_ratio(m::Molecule, mw_atmos::Mass, mh::Real, gas_mmr=nothing)
+function mixing_ratio(e::Element, mw_atmos::Mass, mh::Real, gas_mmr=nothing)
     if isnothing(gas_mmr)
-        ratio = mmr_prop(m)
+        ratio = mmr_prop(e)
     else
         ratio = gas_mmr
     end
     if mh == 1
-        return ratio * molecular_weight(m) / mw_atmos
+        return ratio * molecular_weight(e) / mw_atmos
     else
-        throw("Alert: no M/H dependence in $(typeof(m)) routine. Consult your local theorist to determine next steps.")
+        throw("Alert: no M/H dependence in $(typeof(e)) routine. Consult your local theorist to determine next steps.")
     end
 end
 
@@ -44,8 +45,8 @@ density(::NH₃; kwargs...) = 0.84g/cm^3
 
 dimless_weight(::H₂O) = 18.016
 mmr_prop(::H₂O) = 7.54e-4
-density(::H₂O; kwargs...) = 1g/cm^3
-density_ice(::H₂O; kwargs...) = 0.93g/cm^3
+density(::water; kwargs...) = 1g/cm^3
+density(::ice; kwargs...) = 0.93g/cm^3
 collision_diameter(::H₂O) = 3.11e-8cm
 
 dimless_weight(::Fe) = 55.845
@@ -54,7 +55,7 @@ density(::Fe; kwargs...) = 7.875g/cm^3
 collision_diameter(::Fe) = 4.54e-8cm
 
 dimless_weight(::KCl) = 74.5
-function mixing_ratio(m::KCl, mw_atmos::Mass, mh::Real)
+function mixing_ratio(e::KCl, mw_atmos::Mass, mh::Real)
     if mh == 1
         ratio = 2.2627e-7
     elseif mh == 10
@@ -64,7 +65,7 @@ function mixing_ratio(m::KCl, mw_atmos::Mass, mh::Real)
     else
         throw("KCl gas properties can only be computed for 1, 10, and 50x solar metallicity")
     end
-    ratio * molecular_weight(m) / mw_atmos
+    ratio * molecular_weight(e) / mw_atmos
 end
 density(::KCl; kwargs...) = 1.988g/cm^3
 collision_diameter(::KCl) = 3.31e-8cm
@@ -90,7 +91,7 @@ density(::ZnS; kwargs...) = 4.04g/cm^3
 # collision_diameter(::ZnS) = 2.0604e-8cm
 
 dimless_weight(::Cr) = 51.996
-function mixing_ratio(m::Cr, mw_atmos::Mass, mh::Real)
+function mixing_ratio(e::Cr, mw_atmos::Mass, mh::Real)
     if mh == 1
         ratio = 8.87e-7
     elseif mh == 10
@@ -100,7 +101,7 @@ function mixing_ratio(m::Cr, mw_atmos::Mass, mh::Real)
     else
         throw("Cr gas properties can only be computed for 1, 10, and 50x solar metallicity")
     end
-    ratio * molecular_weight(m) / mw_atmos
+    ratio * molecular_weight(e) / mw_atmos
 end
 density(::Cr; kwargs...) = 7.15g/cm^3
 collision_diameter(::Cr) = 4.46e-8cm
