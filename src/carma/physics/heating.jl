@@ -1,5 +1,3 @@
-using Unitful: σ, k, c, h
-
 """
 Calculates average Planck intensity in a wavelength band.
 This breaks the modeling/simulation barrier, 

@@ -1,5 +1,5 @@
-function sulfuric_nucleation_rate(conc_water::Density, conc_acid::Density, T::Temperature, max_radius::Length)::Tuple{Length,SpecificParticleRate}
-    w, acid = water(), H₂SO₄()
+function sulfuric_nucleation_rate(acid::H₂SO₄, conc_water::Density, conc_acid::Density, T::Temperature, max_radius::Length)::Tuple{Length,SpecificParticleRate}
+    w = water()
     dnpot = zeros(46)
     dnwf = dnwtp ./ 100
     dnpot = 4.184 .* (23624.8 .- 1.14208e8 ./ ((dnwtp .- 105.318) .^ 2 .+ 4798.69))

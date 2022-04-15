@@ -1,4 +1,4 @@
-using Unitful: g, cm, u
+using Unitful: g, cm, u, mol
 using Unitful: Mass
 using Unitful: Na
 

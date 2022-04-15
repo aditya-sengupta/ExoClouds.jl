@@ -40,13 +40,13 @@ function κ_condensate(D::MassDiffusivity, r::Length, M::Mass, T::Temperature, �
     return κ / (1 + λₜ * Knₜ_val)
 end
 
-function dmp_dt(element::Element, D, r, M, T, κ, Cₚ, μ, ρ, S, F_T, F_v) # Jacobson 16.13 but with the numerator of Gao 2018 (A16)
-    Dp = D_condensate(D, r, M, T, κ, Cₚ, μ, ρ)
+# dinosaur
+function dmp_dt(element::Element, particle::Particle, atm::Atmosphere, D, r::Length, M, T::Temperature, κ, μ, ρ, S) # Jacobson 16.13 but with the numerator of Gao 2018 (A16)
+    Dp = D_condensate(D, r, M, T, κ, atm.Cₚ, μ, ρ)
     Ak = akelvin(element, T) # exp(2 * M * σₛ / (ρₚ * R * T * r))
-    κₐ = κ_condensate(D, r, M, T, κ, Cₚ, μ, ρ)
-    @warn "need good handling of the CARMA is_grp_ice"
-    Ft, Fv = Ft_Fv(z, Dp, κₐ, false) 
+    κₐ = κ_condensate(D, r, M, T, κ, atm.Cₚ, μ, ρ)
+    Ft, Fv = Ft_Fv(z, Dp, κₐ, particle.is_ice) 
     num = 4π * r * Dp * pₛ * (S - Ak)
-    denom = ((Dp * L * pₛ) / (κₐ * T)) * (L * M / (R * T) - 1) * (1 / F_T) + R * T / (M * F_v)
+    denom = ((Dp * L * pₛ) / (κₐ * T)) * (L * M / (R * T) - 1) * (1 / Ft) + R * T / (M * Fv)
     return num / denom
 end

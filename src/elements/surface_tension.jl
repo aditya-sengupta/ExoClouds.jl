@@ -46,7 +46,7 @@ function surface_tension_water_ice(::H₂O, T::Temperature; kwargs...)
     return (28.5 + 0.25 * Tc) * erg/cm^2
 end
 
-function akelvin(e::Element, T::Temperature; wtpct::Float64=0) 
+function akelvin(e::Element, T::Temperature; wtpct::Float64=0.0) 
     2 * molar_weight(e) * surface_tension(e, T; wtpct=wtpct) / (R * T * density(e; wtpct=wtpct, T=T))
 end
 

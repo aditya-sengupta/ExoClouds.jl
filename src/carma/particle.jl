@@ -9,39 +9,16 @@ I've realized the difference here is I'm thinking about the problem in a Lagrang
     # elements::Vector{Element} 
     # you always have to pass this in anyway to specify which one you're talking about
     radius_min::Length
-    rad_ratio::Float64
+    radius_ratio::Float64
     aspect_ratio::Float64=1 # eshape
     is_ice::Bool=false
     ref_idx::Float64=1.0
     is_cloud::Bool=true
 end
 
-# all the properties are the same for each state of matter unless it's water, in which case you take "water" or "ice"
-"""
-function vaporpressure(particle::Particle, e::Element, T::Temperature, p::Pressure=1*bar, mh::Float64=1.0)
-    if particle.is_ice
-        return vaporpressure_ice(m, T, p, mh)
+function radius_to_bin(particle::Particle, radius::Length)
+    if radius < particle.radius_min
+        return 1
     else
-        return vaporpressure(m, T, p, mh)
-    end
+        return 2 + Int(floor(log(radius / particle.radius_min) / log(particle.radius_ratio)))
 end
-
-function latent_heat(p::Particle, e::Element, T::Temperature)
-    if p.is_ice
-        rlh = latent_heat_evap(m, T) + latent_heat_melt(m, T)
-    else
-        rlh = latent_heat_evap(m, T)
-    end
-end
-
-function akelvin(p::Particle, e::Element, T::Temperature)
-    if p.is_ice
-        return akelvin_ice(m, T)
-    else
-        return akelvin(m, T)
-    end
-end
-
-function supersaturation(p::Particle, e::Element, concentration::Density, T::Temperature; relative_humidity=1, cloud_frac=1)
-    ssl, ssi = supersaturations()
-end"""

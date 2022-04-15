@@ -1,12 +1,5 @@
 module CARMA
-
-    using Parameters
-    using Unitful: Length, Acceleration, Mass, Pressure, Temperature
-    using Interpolations: LinearInterpolation, Extrapolation
-
-    @derived_dimension TemperatureFlux 𝚯*𝐓^-1 true
-
-    include("coordinates.jl")
+   include("utils.jl")
 
     """
     The structural model aspects of a CARMA run.
@@ -21,12 +14,11 @@ module CARMA
         # and the Extrapolation object will let us linearly interpolate on that
         # this simulation does not discretize on z just yet, but there's no other way to get P, T etc profiles
         # so we interface with these as if they're continuous, write PDEs on them, then discretize those back.
-        # p::SVector{Nz,Pressure{Float64}}
-        # T::SVector{Nz,Temperature{Float64}} # T(z, t)
+
+        mw::Extrapolation # Molar weight(z) 
         P::Extrapolation # Pressure(z)
-        rhoₐ::Extrapolation # Atmosphere density(z)
+        rho::Extrapolation # Atmosphere density(z) (not calling it ρ because it looks too similar to p)
         rlheat::Extrapolation # Latent heat(z)
-        mw_atm::Mass{Float64}
         # metallicity::Float64
         cₚ::Float64
 
@@ -34,13 +26,15 @@ module CARMA
                 planet_radius::Length{Float64}, 
                 surface_gravity::Acceleration{Float64}, 
                 xycoords::Horizontal, zcoords::Vertical, 
-                zp::Vector{Length{Float64}}, pp::Vector{Pressure{Float64}}, rho_p::Vector{Density{Float64}}, rlheatp::Vector{TemperatureFlux{Float64}},
-                mw_atm::Mass{Float64}=2.2u, cₚ::Float64=3.5
+                zp::Vector{Length{Float64}}, Pp::Vector{Pressure{Float64}}, mwp::Vector{Mass{Float64}}, rlheatp::Vector{TemperatureFlux{Float64}},
+                cₚ::Float64=3.5
             )
-            P = LinearInterpolation(zp, pp)
-            rhoₐ = LinearInterpolation(zp, rho_p)
+            mw = LinearInterpolation(zp, mwp)
+            P = LinearInterpolation(zp, Pp)
+            rho_p = Pp .* (mwp ./ mol) ./ (R * Tp) # ideal gas law
+            rho = LinearInterpolation(zp, rho_p)
             rlheat = LinearInterpolation(zp, rlheatp)
-            new{Nxy,Nz}(planet_radius, surface_gravity, xycoords, zcoords, P, rhoₐ, rlheat, mw_atm, cₚ)
+            new{Nxy,Nz}(planet_radius, surface_gravity, xycoords, zcoords, mw, P, rho, rlheat, cₚ)
         end
     end
 
@@ -56,4 +50,42 @@ module CARMA
     # cloud_fraction::Float64
     # relative_humidity::Float64
 
+    abstract type Microphysics end
+
+    function dynamics(::Microphysics, state::State)
+        println("This function should provide a contribution to the CARMA differential equation source term due to the relevant piece of physics, in a form that I've yet to work out.")
+    end
+
+    """
+    Describes an ice or liquid element that grows in the presence of a gas condensing onto it.
+    """
+    struct Nucleation <: Microphysics
+        particle::Particle        # the particle being nucleated onto
+        condensate::Element     # the condensing gas
+    end
+
+    function dynamics(n::Nucleation, state::State)
+        
+    end
+
+    """
+    Describes phase changes due to diffusion of condensate molecules to and away from the cloud particle.
+    """
+    struct Diffusion <: Microphysics
+        particle::Particle
+    end
+
+
+    struct Heating <: Microphysics
+        particle::Particle
+    end
+
+    struct Coagulation <: Microphysics
+        p1::Particle
+        p2::Particle
+    end
+
+    struct VerticalTransport <: Microphysics
+        particle::Particle
+    end
 end
