@@ -2,40 +2,37 @@ using Unitful: G, R
 
 @derived_dimension PressureGradient 𝐌*𝐋^-2*𝐓^-2 true
 
-gravity(mass, radius) = G * mass / (radius ^ 2)
+gravity(mass::Mass, radius::Length) = G * mass / (radius ^ 2)
 
-abstract type Horizontal end
-abstract type Vertical end
+abstract type Horizontal{N} end
+abstract type Vertical{N} end
 
-struct HorizontalCartesian <: Horizontal end
+struct HorizontalCartesian{N} <: Horizontal 
+    ref_x::SVector{N,Float64}
+    ref_y::SVector{N,Float64}
+end
+
 xmet(::HorizontalCartesian, z::Length) = 1.0
 ymet(::HorizontalCartesian, z::Length) = 1.0
 
-struct LatitudeLongitude <: Horizontal
+struct LatitudeLongitude{N} <: Horizontal
     planet_radius::Length
+    ref_lat::SVector{N,Float64}
+    ref_lon::SVector{N,Float64}
 end
 
 xmet(::LatitudeLongitude, z::Length) = planet_radius * π / 180 * cosd(yc(z))
 ymet(::LatitudeLongitude, z::Length) = planet_radius * π / 180 
 
-struct VerticalCartesian <: Vertical end
+struct VerticalCartesian{N} <: Vertical 
+    ref_z::SVector{N,Float64}
+end
 zmet(::VerticalCartesian, z::Length, dPdz::PressureGradient) = 1.0
 
-struct Sigma <: Vertical end # Hybrid is the same as Sigma as far as I can tell
+struct Sigma{N} <: Vertical 
+    ref_z::SVector{N,Float64}
+end # Hybrid is the same as Sigma as far as I can tell
 zmet(::Sigma, z::Length, dPdz::PressureGradient, g::Acceleration, ρ::Density) = abs(dPdz) / (g * ρ)
-
-"""
-The structural model aspects of a CARMA run.
-"""
-@with_kw struct Atmosphere # unify this with Virga's at some point
-    planet_radius::Length
-    surface_gravity::Acceleration
-    xy::Horizontal
-    z::Vertical
-    mean_molecular_weight::Mass = 2.2u
-    # metallicity::Real
-    cₚ::Real = 7//2
-end
 
 gravity(atm::Atmosphere, z::Length)::Acceleration = atm.surface_gravity * atm.planet_radius^2 / (atm.planet_radius + z)^2
 

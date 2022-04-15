@@ -13,7 +13,7 @@ function carma_growtest()
     ## of drops at the smallest size, then allow that to grow using a gas. The
     ## total mass of drops + gas should be conserved.
 
-    using ExoClouds: CARMA, Molecules
+    using ExoClouds
     using Unitful
     using Unitful: Length
     using Unitful: cm
@@ -26,21 +26,19 @@ function carma_growtest()
     const NSOLUTE = 0
     const NGAS = 1
     const NWAVE = 0
-    const Δx = 100.0
-    const Δy = 100.0
-    const Δz = 100.0
-    const zmin = 3000.0
+    const Δx = 100.0m
+    const Δy = 100.0m
+    const Δz = 100.0m
+    const zmin = 3000.0m
 
-    water = H₂O()
-    ice_crystal = Particle([water], 1e-4cm, 2, is_ice=true)
+    w = water()
+    i = ice()
+    ice_crystal = Particle([i], 1e-4cm, 2, is_ice=true)
 
     const processes = [
-      Growth(water, ice_crystal)
+      Growth(i, w)
     ]
 
-    # Setup the CARMA processes to exercise
-    call CARMA_AddGrowth(carma, 1, 1, rc)
-    if (rc /=0) stop "    *** CARMA_AddGrowth FAILED ***"
 
     # For simplicity of setup, do a case with Cartesian coordinates,
     # which are specified in this interface in meters.
@@ -52,24 +50,16 @@ function carma_growtest()
     lon = -105.0_f
     
     # Horizonal centers
-    dx(:) = deltax
-    xc(:) = dx(:) / 2._f
-    dy(:) = deltay
-    yc(:) = dy(:) / 2._f
-    
-    # Vertical center
-    do i = 1, NZ
-      zc(i) = zmin + (deltaz * (i - 0.5_f))
-    end do
-    
-    call GetStandardAtmosphere(zc, p=p, t=t)
+    dx = Δx * ones(NZ)
+    dy = Δy * ones(NZ)
+    xc, yc = dx ./ 2, dy ./ 2
+    zc = zmin .+ Δz * (0.5:NZ-0.5)
 
-    # Vertical edge
-    do i = 1, NZP1
-      zl(i) = zmin + ((i - 1) * deltaz)
-    end do
-    call GetStandardAtmosphere(zl, p=pl)
+    pressure_centers, temp_centers = standard_atmosphere(zc)
 
+    zl = zmin .+ Δz * (0:NZ-1)
+
+    pressure_limits, temp_limits = standard_atmosphere(zl)
     
     # Setup up an arbitray mass mixing ratio of water vapor, so there is someting to
     # grow the particles.
@@ -81,7 +71,7 @@ function carma_growtest()
     
     
     # Write output for the test
-    write(lun,*) NGROUP, NELEM, NBIN, NGAS
+    println(NGROUP, NELEM, NBIN, NGAS)
 
     do igroup = 1, NGROUP
       call CARMAGROUP_Get(carma, igroup, rc, r=r, rmass=rmass)

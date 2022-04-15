@@ -10,7 +10,7 @@ Parameters
 RO : float
     Outer Shell Radius (cm)
 RFR : float
-    Real refractive index of shell layer (in the form n= RFR-i*RFI)
+    Float64 refractive index of shell layer (in the form n= RFR-i*RFI)
 RFI : float
     Imaginary refractive index of shell layer (in the form n= RFR-i*RFI)
 THET : ndarray 
@@ -20,7 +20,7 @@ JX : integer
 R : float
     Radius of core (cm)`
 RE2 : float 
-    Real refractive index of core (in the form n= RE2-i*TMAG2)
+    Float64 refractive index of core (in the form n= RE2-i*TMAG2)
 TMAG2 : float
     Imaginary refractive index of core (in the form n= RE2-i*TMAG2)
     

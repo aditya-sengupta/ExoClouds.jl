@@ -1,6 +1,5 @@
 """
-Defines various molecules that may exist in atmospheres. A specific element is a struct that subtypes Element.
-Note that molecules have no attributes of their own, and are instead only to be used for function dispatch.
+Defines various elements that may exist in atmospheres. A specific element is a struct that subtypes Element.
 """
 module Elements
     using Unitful

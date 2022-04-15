@@ -4,12 +4,14 @@ module ExoClouds
     const PROJECT_ROOT = pkgdir(ExoClouds)
     # "/"*relpath((@__FILE__)*"/../..","/")
 
-    include("molecules/Molecules.jl")
+    include("elements/Elements.jl")
     include("scattering/mie.jl")
-    include("models/virga/virga.jl")
+    include("virga/virga.jl")
+    include("carma/carma.jl")
 
     export mie_efficiencies
-    @reexport using .Molecules
+    @reexport using .Elements
     @reexport using .Virga
+    @reexport using .CARMA
 
 end # module

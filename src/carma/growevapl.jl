@@ -73,7 +73,7 @@ end
 """
 CARMA's "gro": growth due to diffusion processes
 """
-function growth_diffusion(e::Element, r::Length, T::Temperature, Dp::MassDiffusivity, fv::Real)
+function growth_diffusion(e::Element, r::Length, T::Temperature, Dp::MassDiffusivity, fv::Float64)
     br = getwetr(r, T) # low
     return 4π * br * Dp * fv * molar_weight(m) / (k * T * Na)
 end
@@ -81,7 +81,7 @@ end
 """
 CARMA's "gro1": growth due to conduction
 """
-function growth_conduction(particle::Particle, e::Element, r::Length, T::Temperature, κₐ, ft::Real)
+function growth_conduction(particle::Particle, e::Element, r::Length, T::Temperature, κₐ, ft::Float64)
     rlh = latent_heat(particle, m, T)
     br = getwetr(r, T) # low 
     return molar_weight(m) * rlh^2 / (R * T^2 * ft * κₐ) / (4π * br)
@@ -101,7 +101,7 @@ rad_incident is FORTRAN's radint, to be set by the user.
 
 This should be called at a particular (r, T) which the state knows.
 """
-function pheat(atm::Atmosphere, particle::Particle, e::Element, r::Length, T::Temperature, p::Pressure, conc::Density, relative_humidity::Real, cloud_frac::Real, rad_incident=0, λ::Vector=[], dλ::Vector=[];
+function pheat(atm::Atmosphere, particle::Particle, e::Element, r::Length, T::Temperature, p::Pressure, conc::Density, relative_humidity::Float64, cloud_frac::Float64, rad_incident=0, λ::Vector=[], dλ::Vector=[];
     NWAVE=0, POWMAX=85, wtpct=0.1, do_pheat=true, do_pheatatm=true, do_mie=true, do_wave_emit=true, max_iter=10) 
     if particle.is_ice
         expon = max(-POWMAX, akelvin_ice(m, T) / getwetr(r, T))

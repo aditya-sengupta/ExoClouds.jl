@@ -4,7 +4,7 @@ using Unitful: ustrip
 using LinearAlgebra: ⋅
 using Distributions: UnivariateDistribution
 
-using ..Molecules
+using ..Elements
 
 function advdiff_const(
     qₜ::AbstractFloat,
@@ -215,7 +215,7 @@ mmw : float
 gas_name : str 
     gas name, case sensitive 
 """
-function find_cond_t(t_test::Temperature, p_test::Pressure, mh::Real, mmw::Mass, e::Element)   
+function find_cond_t(t_test::Temperature, p_test::Pressure, mh::Float64, mmw::Mass, e::Element)   
     #get vapor pressure and correct for masses of atmo and gas 
     pv = molecular_weight(m) / mmw * vaporpressure(m, t_test, p_test, mh)
     #get partial pressure

@@ -3,7 +3,7 @@ using UnitfulAstro: dyn
 
 vapormhfactor(::Element) = 0.0
 
-function vaporpressure(e::Element, T::Temperature, p::Pressure=1*bar, mh::Real=1.0)::Pressure
+function vaporpressure(e::Element, T::Temperature, p::Pressure=1*bar, mh::Float64=1.0)::Pressure
     if (mh != 1) && (vapormhfactor(e) == 0.0)
         throw("Warning: no M/H Dependence in vapor pressure curve for $(typeof(e))")
     end
@@ -11,14 +11,14 @@ function vaporpressure(e::Element, T::Temperature, p::Pressure=1*bar, mh::Real=1
 end
 
 # for almost every species, this is true
-function vaporpressure_ice(e::Element, T::Temperature, p::Pressure=1*bar, mh::Real=1.0)::Pressure
+function vaporpressure_ice(e::Element, T::Temperature, p::Pressure=1*bar, mh::Float64=1.0)::Pressure
     vaporpressure(e, T, p, mh)
 end
 
 """
 A power-law model between temperature and vapor pressure. This is the default law, but it may be overridden for individual subtypes.
 """
-function vaporcurve(e::Element, T::Temperature, logmh::Real)
+function vaporcurve(e::Element, T::Temperature, logmh::Float64)
     # TODO check if vaporintercept/vaporslope have physical meanings and if so rename
     10.0 ^ (vaporintercept(e) - vaporslope(e) / T - vapormhfactor(e) * logmh) * bar
 end
@@ -33,7 +33,7 @@ vaporintercept(::ZnS) = 12.8117
 vaporslope(::ZnS) = 15873.0K
 vapormhfactor(::ZnS) = 1.0
 
-function vaporcurve(::NH₃, T::Temperature, logmh::Real)
+function vaporcurve(::NH₃, T::Temperature, logmh::Float64)
     exp(-(86596.0 * K^2)/T^2 - (2161.0*K)/T + 10.53) * bar
 end
 vapormhfactor(::NH₃) = 0.0
@@ -53,14 +53,14 @@ vapormhfactor(::MgSiO₃) = 1.0
 vaporintercept(::Mg₂SiO₄) = 14.88
 vaporslope(::Mg₂SiO₄) = 32488.0K
 vapormhfactor(::Mg₂SiO₄) = 1.4
-function vaporpressure(e::Mg₂SiO₄, T::Temperature, p::Pressure, mh::Real)::Pressure
+function vaporpressure(e::Mg₂SiO₄, T::Temperature, p::Pressure, mh::Float64)::Pressure
     vaporcurve(e, T, log10(eh)) * (p / bar)^(-0.2)
 end
 
 vaporintercept(::KCl) = 7.6106
 vaporslope(::KCl) = 11382.0K
 
-function vaporcurve(::ice, T::Temperature, logmh::Real=0.0; do_buck::Bool=true)
+function vaporcurve(::ice, T::Temperature, logmh::Float64=0.0; do_buck::Bool=true)
     @assert T < 0°C "ice has to be cold"
     Tc = ustrip(uconvert(°C, T))
     Tk = ustrip(uconvert(K, T))
@@ -82,7 +82,7 @@ function vaporcurve(::ice, T::Temperature, logmh::Real=0.0; do_buck::Bool=true)
     end
 end
 
-function vaporcurve(::water, T::Temperature, logmh::Real=0.0; do_buck::Bool=true)
+function vaporcurve(::water, T::Temperature, logmh::Float64=0.0; do_buck::Bool=true)
     @assert T > 0°C "water has to be warm"
     Tc = ustrip(uconvert(°C, T))
     Tk = ustrip(uconvert(K, T))
@@ -111,7 +111,7 @@ function vaporcurve(::water, T::Temperature, logmh::Real=0.0; do_buck::Bool=true
     end
 end
 
-"""function vaporpressure(::ice, T::Temperature, p::Pressure=1*bar, mh::Real=1.0)
+"""function vaporpressure(::ice, T::Temperature, p::Pressure=1*bar, mh::Float64=1.0)
     Tc = ustrip(uconvert(°C, T))
     # Buck 1981
     return buck.BAI * exp((buck.BBI - Tc/buck.BDI)*Tc / (Tc + buck.BCI)) * dyn / cm^2
@@ -121,7 +121,7 @@ end"""
 vaporintercept(::Fe) = 7.09
 vaporslope(::Fe) = 20833.0K
 
-function vaporcurve(::CH₄, T::Temperature, logmh::Real=0.0)
+function vaporcurve(::CH₄, T::Temperature, logmh::Float64=0.0)
     tcr = methane.TCRIT
     if T < tcr * K
         C = -methane.AMR * methane.AS

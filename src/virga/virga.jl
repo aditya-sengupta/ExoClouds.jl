@@ -6,7 +6,7 @@ module Virga
     using Unitful: Mass, Pressure, Temperature
     using Unitful: bar, K
 
-    using ..Molecules
+    using ..Elements
 
     include("roots.jl")
     include("utils.jl")
@@ -14,7 +14,7 @@ module Virga
 
     function condensation_t(
         gas::Element, 
-        mh::Real, 
+        mh::Float64, 
         mmw::Mass, 
         pressure::Vector{<:Pressure}=(10 .^(-6:8/19:2)) * bar
     )
@@ -28,7 +28,7 @@ module Virga
         ])
     end
 
-    function recommend_gas(pressure::Vector{<:Pressure}, temperature::Vector{<:Temperature}, mh::Real, mmw::Mass; makeplot=true)
+    function recommend_gas(pressure::Vector{<:Pressure}, temperature::Vector{<:Temperature}, mh::Float64, mmw::Mass; makeplot=true)
         p = plot(yaxis=:log10, yflip=true, xlabel="Temperature (K)", ylabel="Pressure (bar)", yticks=10.0 .^(-5:2))
         if makeplot
             plot!(temperature ./ K, pressure ./ bar, label="User", linestyle=:dash, size=(800,600))
@@ -46,7 +46,7 @@ module Virga
             rec
         end
 
-        filter(choice, available_molecules()), p
+        filter(choice, available_elements()), p
     end
 
     export condensation_t, recommend_gas

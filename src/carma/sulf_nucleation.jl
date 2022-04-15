@@ -1,18 +1,19 @@
 function sulfuric_nucleation_rate(conc_water::Density, conc_acid::Density, T::Temperature, max_radius::Length)::Tuple{Length,SpecificParticleRate}
+    w, acid = water(), H₂SO₄()
     dnpot = zeros(46)
     dnwf = dnwtp ./ 100
     dnpot = 4.184 .* (23624.8 .- 1.14208e8 ./ ((dnwtp .- 105.318) .^ 2 .+ 4798.69))
 
     # Molecular weight ratio of H2SO4 / H2O:
-    wtmolr = molar_weight(acid) / molar_weight(water)
+    wtmolr = molar_weight(acid) / molar_weight(w)
 
     # Compute H2O and H2SO4 concentrations in molecules/cm3 
     # (factor of Avogadro's constant removed because Unitful should handle it, as we're using molecular weight)
-    conc_water_mol   = conc_water / molecular_weight(water)
+    conc_water_mol   = conc_water / molecular_weight(w)
     conc_acid_mol    = conc_acid  / molecular_weight(acid)
 
     # Compute ln of H2O and H2SO4 ambient vapor pressures [dynes/cm2]
-    h2oln   = log(h2o_cgs   * (R / molar_weight(water)) * T)
+    h2oln   = log(h2o_cgs   * (R / molar_weight(w)) * T)
     h2so4ln = log(h2so4_cgs * (R / molar_weight(acid)) * T)
 
     # loop through wt pcts and calculate vp/composition for each
@@ -111,7 +112,7 @@ function sulfuric_nucleation_rate(conc_water::Density, conc_acid::Density, T::Te
     sigma = sulfate_surf_tens(wstar, T)  
         
     # Critical Y (eqn 13 in Zhao & Turco 1993) [erg/cm3]
-    ystar = dstar * R * T * (wfstar / molar_weight(acid) * raln + (1 - wfstar) / molar_weight(water) * rhln)
+    ystar = dstar * R * T * (wfstar / molar_weight(acid) * raln + (1 - wfstar) / molar_weight(w) * rhln)
     if (ystar < 1.e-20 * erg/cm^3) then
         return 0.0cm, 0.0/cm^3/s
     end
@@ -130,7 +131,7 @@ function sulfuric_nucleation_rate(conc_water::Density, conc_acid::Density, T::Te
         
     # Beta[cm/s] = sqrt(RB[erg/mol] / WTMOL[g/mol])
     beta1 = sqrt(rb / molar_weight(acid)) 
-    beta2 = sqrt(rb / molar_weight(water))
+    beta2 = sqrt(rb / molar_weight(w))
 
     # RPR[molecules/s] = 4Pi * R2[cm2] * H2O[molecules/cm3] * Beta[cm/s]
     rpr = 4π * r2 * conc_water_mol * beta1

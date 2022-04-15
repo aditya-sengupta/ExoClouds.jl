@@ -11,7 +11,7 @@ function mie_efficiencies(
     refractive_index::Complex,
     wavelength::Length,
     diameter::Length;
-    n_medium::Real = 1.0
+    n_medium::Float64 = 1.0
 )
 #  http://pymiescatt.readthedocs.io/en/latest/forward.html#MieQ
     refractive_index /= n_medium
@@ -63,7 +63,7 @@ end # function
 
 function mie_external_coefficients(
     m::Complex, # refractive index
-    x::Real # size parameter
+    x::Float64 # size parameter
 )
 #  http://pymiescatt.readthedocs.io/en/latest/forward.html#Mie_ab
     mx = m * x

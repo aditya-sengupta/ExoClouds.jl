@@ -3,12 +3,12 @@
 using Unitful
 using Unitful: k, R
 
-function critical_radius(M::Mass, σₛ::Energy, ρₚ::Density, S::Real, T::Temperature)
+function critical_radius(M::Mass, σₛ::Energy, ρₚ::Density, S::Float64, T::Temperature)
     return 2 * M * σₛ / (ρₚ * R * T * log(S))
 end
 
 function diffusion_rate(e::Element, p::Pressure, T::Temperature) # p for partial pressure
-    return p * mixing_ratio(m) / sqrt(2π * molecular_weight(m) * k * T)
+    return p * mixing_ratio(e) / sqrt(2π * molecular_weight(e) * k * T)
 end
 
 function zeldovich(F, T, gₘ)
@@ -16,15 +16,18 @@ function zeldovich(F, T, gₘ)
 end
 
 """
-Homogeneous nucleation.
+Homogeneous nucleation (homnucgen.F90)
 
-m - the element nucleating
-
+e - the element nucleating and condensing
+n - number density of condensate 
+gₘ - # molecules in particles with radius = the critical radius
 """
-function nucleation(e::Element, σₛ::Energy, ρₚ::Density, S::Real, p::Pressure, T::Temperature, n::Integer, gₘ::Integer)
-    a = critical_radius(molecular_weight(m), σₛ, ρₚ, S, T)
+function nucleation(atm::Atmosphere, state::State, z::Length, e::Element, particle::Particle, n::Integer, gₘ::Integer)
+    S = supersaturation(e, ?, T; is_ice=particle.is_ice)
+    a = critical_radius(molecular_weight(e), σₛ, density(e), S, T)
+    σₛ = surface_tension()
     F = (4π/3) * σₛ * a^2
-    Φ = diffusion_rate(m, p, T)
+    Φ = diffusion_rate(e, atm.p(z), T)
     Z = zeldovich(F, T, gₘ)
     return 4π * a^2 * Φ * Z * n * exp(-F / (k * T))
 end

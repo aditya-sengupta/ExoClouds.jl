@@ -17,7 +17,7 @@ molecular_weight(e::Element) = dimless_weight(e) * u
 molar_weight(e::Element) = dimless_weight(e) * g
 density_ice(e::Element; kwargs...) = density(e::Element; kwargs...)
 
-function mixing_ratio(e::Element, mw_atmos::Mass, mh::Real, gas_mmr=nothing)
+function mixing_ratio(e::Element, mw_atmos::Mass, mh::Float64, gas_mmr=nothing)
     if isnothing(gas_mmr)
         ratio = mmr_prop(e)
     else
@@ -55,7 +55,7 @@ density(::Fe; kwargs...) = 7.875g/cm^3
 collision_diameter(::Fe) = 4.54e-8cm
 
 dimless_weight(::KCl) = 74.5
-function mixing_ratio(e::KCl, mw_atmos::Mass, mh::Real)
+function mixing_ratio(e::KCl, mw_atmos::Mass, mh::Float64)
     if mh == 1
         ratio = 2.2627e-7
     elseif mh == 10
@@ -71,7 +71,7 @@ density(::KCl; kwargs...) = 1.988g/cm^3
 collision_diameter(::KCl) = 3.31e-8cm
 
 dimless_weight(::MgSiO₃) = 100.4
-mixing_ratio(::MgSiO₃, mw_atmos::Mass, mh::Real) = 2.75e-3 * mh # this should be manually override-able?
+mixing_ratio(::MgSiO₃, mw_atmos::Mass, mh::Float64) = 2.75e-3 * mh # this should be manually override-able?
 density(::MgSiO₃; kwargs...) = 3.192g/cm^3
 
 dimless_weight(::Mg₂SiO₄) = 140.69
@@ -91,7 +91,7 @@ density(::ZnS; kwargs...) = 4.04g/cm^3
 # collision_diameter(::ZnS) = 2.0604e-8cm
 
 dimless_weight(::Cr) = 51.996
-function mixing_ratio(e::Cr, mw_atmos::Mass, mh::Real)
+function mixing_ratio(e::Cr, mw_atmos::Mass, mh::Float64)
     if mh == 1
         ratio = 8.87e-7
     elseif mh == 10

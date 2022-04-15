@@ -4,28 +4,28 @@ using Unitful: k, R, G # constants
 using ForwardDiff
 using Parameters
 
-using ..Molecules
+using ..Elements
 
-include("../../utils.jl")
+include("../utils.jl")
 
 gravity(mass, radius) = G * mass / (radius ^ 2)
 
 @with_kw struct Atmosphere
     gravity::Acceleration
-    kz::Real
+    kz::Float64
     pressure_at_altitude::Function 
     temp_at_altitude::Function
     temp_at_pressure::Function
     # are these scaling relations always going to be splines/interpolations?
     # if so there's probably some opportunity for optimization
     # or just keeping the data around (better for sensitivity analysis)
-    fsed::Real = 0.5
-    mh::Real = 1.0
+    fsed::Float64 = 0.5
+    mh::Float64 = 1.0
     mean_molecular_weight::Mass = 2.2u
-    cₚf::Real = 7//2
+    cₚf::Float64 = 7//2
     molecule_diameter::Length = 2.827e-8 * cm
-    supsat::Real = 0.0
-    ϵ::Real = 0.01
+    supsat::Float64 = 0.0
+    ϵ::Float64 = 0.01
     ϵₖ::Temperature = 59.7 * K
 end
 
