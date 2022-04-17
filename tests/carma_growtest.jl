@@ -39,59 +39,30 @@ function carma_growtest()
       Growth(i, w)
     ]
 
-
-    # For simplicity of setup, do a case with Cartesian coordinates,
-    # which are specified in this interface in meters.
-    #
-    # NOTE: For Cartesian coordinates, the first level is the bottom 
-    # of the model (e.g. z = 0), while for sigma and hybrid coordinates
-    # the first level is the top of the model.
-    lat = -40.0_f
-    lon = -105.0_f
-    
     # Horizonal centers
     dx = Δx * ones(NZ)
     dy = Δy * ones(NZ)
     xc, yc = dx ./ 2, dy ./ 2
     zc = zmin .+ Δz * (0.5:NZ-0.5)
-
-    pressure_centers, temp_centers = standard_atmosphere(zc)
-
     zl = zmin .+ Δz * (0:NZ-1)
-
-    pressure_limits, temp_limits = standard_atmosphere(zl)
     
-    # Setup up an arbitray mass mixing ratio of water vapor, so there is someting to
+    # Set up an arbitray mass mixing ratio of water vapor, so there is someting to
     # grow the particles.
     mmr_gas(:,:) = 1e-2_f
           
     # Start with some initial water drops in the smallest bin, which can then grow
     # to larger sizes in the presence of the water vapor.
     mmr(:,:,1) = 1e-6_f
-    
-    
-    # Write output for the test
-    println(NGROUP, NELEM, NBIN, NGAS)
-
-    do igroup = 1, NGROUP
-      call CARMAGROUP_Get(carma, igroup, rc, r=r, rmass=rmass)
-      if (rc /=0) stop "    *** CARMAGROUP_Get FAILED ***"
-      
-      do ibin = 1, NBIN
-        write(lun,'(2i4,2e10.3)') igroup, ibin, r(ibin) * 1e4_f, rmass(ibin)
-      end do
-    end do
-
 
     # Try TTL Conditions ...
     #
     # p, T, z, mmrgas, rmin, particle concentration
     # 90 hPa, 190 K, 17 km, 3.5e-6 g/g, 5 um, 0.1/cm^3.
-    p(1)         = 90._f * 100._f
-    zc(1)        = 17000._f
-    t(1)         = 190._f
-    zl(1)        = zc(1) - deltaz
-    zl(2)        = zc(1) + deltaz
+    p[1]         = 90hPA
+    zc[1]        = 17km
+    t[1]         = 190K
+    zl(1)        = zc(1) - Δz
+    zl(2)        = zc(1) + Δz
     rho(1)       = (p(1) * 10._f) / (R_AIR * t(1)) * (1e-3_f * 1e6_f)
     pl(1)        = p(1) - (zl(1) - zc(1)) * rho(1) * (GRAV / 100._f)
     pl(2)        = p(1) - (zl(2) - zc(1)) * rho(1) * (GRAV / 100._f)

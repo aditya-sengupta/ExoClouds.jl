@@ -2,7 +2,6 @@ using Unitful: R
 using Unitful: Length, Acceleration, Mass, Temperature, Pressure, DynamicViscosity, Density
 using Unitful: ustrip
 using LinearAlgebra: ⋅
-using Distributions: UnivariateDistribution
 
 using ..Elements
 

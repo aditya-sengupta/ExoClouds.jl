@@ -197,13 +197,14 @@ function layer(gas, rho_p, t_layer, p_layer, t_top, t_bot, p_top, p_bot,
 
     #Get layer averages
 
-    if opd_layer > 0. : 
+    if opd_layer > 0.0
         reff_layer = 1.5*qc_layer / (rho_p*opd_layer)
         lnsig2 = 0.5*log( sig )^2
         rg_layer = reff_layer*exp( -5*lnsig2 )
-    else : 
+    else 
         reff_layer = 0.
         rg_layer = 0.
+    end
 
     qc_layer = qc_layer*gravity / dp_layer
     qt_layer = qt_layer*gravity / dp_layer

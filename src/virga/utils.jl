@@ -3,7 +3,7 @@ using QuadGK: quadgk
 using Interpolations: LinearInterpolation, extrapolate
 
 # surprised Julia doesn't have a canonical implementation for this
-moment(d::UnivariateDistribution, n::Float64, lbd::Float64=0, ubd::Float64=Inf) = quadgk(x -> x^n * pdf(d, x), lbd, ubd)[1]
+moment(d::UnivariateDistribution, n::Float64, lbd::Float64=0.0, ubd::Float64=Inf) = quadgk(x -> x^n * pdf(d, x), lbd, ubd)[1]
 
 """
 Linear interpolation that matches the behaviour of np.interp,

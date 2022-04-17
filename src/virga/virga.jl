@@ -15,8 +15,8 @@ module Virga
     function condensation_t(
         gas::Element, 
         mh::Float64, 
-        mmw::Mass, 
-        pressure::Vector{<:Pressure}=(10 .^(-6:8/19:2)) * bar
+        mmw::Mass{Float64}, 
+        pressure::Vector{Pressure{Float64}}=(10 .^(-6:8/19:2)) * bar
     )
         pressure, Vector{Temperature}([
             find_zero(
