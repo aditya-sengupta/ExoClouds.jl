@@ -30,6 +30,8 @@ function mixing_ratio(e::Element, mw_atmos::Mass, mh::Float64, gas_mmr=nothing)
     end
 end
 
+mixing_ratio(e::Element, atm::Atmosphere) = mixing_ratio(e, atm.mmw, atm.mh)
+
 dimless_weight(::TiO₂) = 80.0
 mmr_prop(::TiO₂) = 1.69e-7
 density(::TiO₂; kwargs...) = 4.25g/cm^3

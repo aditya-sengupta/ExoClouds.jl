@@ -99,7 +99,7 @@ function layer(gas, rho_p, t_layer, p_layer, t_top, t_bot, p_top, p_bot,
     r_cloud = R / molecular_weight(gas)
 
     #   specific heat of atmosphere (erg/K/g)
-    c_p = atm.cₚf * r_atmos
+    c_p = atm.cₚ * r_atmos
 
     #   pressure thickness of layer
     dp_layer = p_bot - p_top
@@ -107,7 +107,7 @@ function layer(gas, rho_p, t_layer, p_layer, t_top, t_bot, p_top, p_bot,
 
     #   temperature gradient 
     dtdlnp = (t_top - t_bot) / dlnp
-    lapse_ratio = (t_bot - t_top) / dlnp / (t_layer / atm.cₚf)
+    lapse_ratio = (t_bot - t_top) / dlnp / (t_layer / atm.cₚ)
 
     #   atmospheric density (g/cm^3)
     rho_atmos = p_layer / (r_atmos * t_layer)

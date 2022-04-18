@@ -13,32 +13,34 @@ module Virga
     export find_cond_t
 
     function condensation_t(
+        atm::Atmosphere,
         gas::Element, 
-        mh::Float64, 
-        mmw::Mass{Float64}, 
-        pressure::Vector{Pressure{Float64}}=(10 .^(-6:8/19:2)) * bar
+        pressures::Union{Nothing,Vector{Pressure{Float64}}}=nothing
     )
-        pressure, Vector{Temperature}([
+        if isnothing(pressures)
+            pressures = each(atm.P)
+        end
+        pressures, Vector{Temperature}([
             find_zero(
-                    t -> find_cond_t(t, p, mh, mmw, gas),
-                    (10*K, 10000*K),
+                    t -> find_cond_t(t, atm.P, atm.mh, atm.mmw, gas),
+                    (10.0*K, 10000.0*K),
                     Roots.Brent()
                 )
-            for p in pressure
+            for p in pressures
         ])
     end
 
-    function recommend_gas(pressure::Vector{<:Pressure}, temperature::Vector{<:Temperature}, mh::Float64, mmw::Mass; makeplot=true)
+    function recommend_gas(atm::Atmosphere, temperature::Vector{Temperature{Float64}}; makeplot=true)
         p = plot(yaxis=:log10, yflip=true, xlabel="Temperature (K)", ylabel="Pressure (bar)", yticks=10.0 .^(-5:2))
         if makeplot
             plot!(temperature ./ K, pressure ./ bar, label="User", linestyle=:dash, size=(800,600))
         end
 
         function choice(gas::Element)::Bool
-            cond_p, cond_t = condensation_t(gas, mh, mmw)
-            interp_cond_t = map(p -> fixed_interp(p, cond_p, cond_t), pressure)
+            cond_p, cond_t = condensation_t(atm, gas)
+            interp_cond_t = (extrapolate(cond_p, cond_t)).(each(atm.P))
             diff_curve = temperature .- interp_cond_t
-            rec = (maximum(diff_curve) > 0K) && (minimum(diff_curve) < 0K)
+            rec = (maximum(diff_curve) > 0.0K) && (minimum(diff_curve) < 0.0K)
             if makeplot
                 width = rec ? 5 : 1
                 plot!(cond_t ./ K, cond_p ./ bar, lw=width, label=typeof(gas))

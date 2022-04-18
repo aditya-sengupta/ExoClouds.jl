@@ -192,13 +192,13 @@ function qvs_below_model(
     t_test = qv_t + log(qv_p / p_test)* qv_dtdlnp
     
     #  Compute saturation mixing ratio
-    pvap_test = vaporpressure(m, t_test, p_test, mh)
+    pvap_test = vaporpressure(e, t_test, p_test, mh)
     fx = qv_factor * pvap_test / p_test 
     return log(fx) - log(q_below)
 end
 
 """
-Root function used to find condenstation temperature. E.g. 
+Root function used to find condensation temperature. E.g. 
 the temperature when  
 log p_vap = log partial pressure of gas 
 Parameters
@@ -216,7 +216,7 @@ gas_name : str
 """
 function find_cond_t(t_test::Temperature, p_test::Pressure, mh::Float64, mmw::Mass, e::Element)   
     #get vapor pressure and correct for masses of atmo and gas 
-    pv = molecular_weight(m) / mmw * vaporpressure(m, t_test, p_test, mh)
+    pv = molecular_weight(e) / mmw * vaporpressure(e, t_test, p_test, mh)
     #get partial pressure
     partial_p = mixing_ratio(m, mmw, mh) * p_test * mh 
     if pv / bar == 0.0

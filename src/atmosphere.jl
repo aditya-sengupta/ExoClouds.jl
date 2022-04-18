@@ -9,7 +9,7 @@ using Elements
 """
 The structural model aspects of a CARMA/virga run.
 """
-struct Atmosphere # unify this with Virga's at some point
+struct Atmosphere
     planet_radius::Length{Float64}
     surface_gravity::Acceleration{Float64}
     # xy::Horizontal{Nxy}
@@ -22,14 +22,13 @@ struct Atmosphere # unify this with Virga's at some point
 
     mw::Extrapolation # Molar weight(z) 
     P::Extrapolation # Pressure(z)
-    rho::Extrapolation # Atmosphere density(z) (not calling it ρ because it looks too similar to p)
+    rho::Extrapolation # Atmosphere density(z) (not calling it ρ because it l.ooks too similar to p)
     rlheat::Extrapolation # Latent heat(z)
-    # metallicity::Float64
+    mmw::Float64
     cₚ::Float64
-    fsed::Float64
     mh::Float64
-    ϵ::Float64
     ϵₖ::Temperature{Float64}
+    d_molecule::Length{Float64}
     zref::Length{Float64}
 
     function Atmosphere(
@@ -37,17 +36,17 @@ struct Atmosphere # unify this with Virga's at some point
             surface_gravity::Acceleration{Float64}, 
             # xycoords::Horizontal, zcoords::Vertical, 
             zp::Vector{Length{Float64}}, Pp::Vector{Pressure{Float64}}, mwp::Vector{Mass{Float64}}, rlheatp::Vector{TemperatureFlux{Float64}},
-            cₚ::Float64=3.5, fsed::Float64=0.5, mh::Float64=1.0, ϵ::Float64=0.01, ϵₖ::Temperature{Float64} = 59.7 * K,
+            cₚ::Float64=3.5, mh::Float64=1.0, ϵₖ::Temperature{Float64} = 59.7 * K, d_molecule::Length{Float64} = 2.827e-8cm
         )
-        mw = LinearInterpolation(zp, mwp)
-        P = LinearInterpolation(zp, Pp)
+        zref = zp[length(zp)÷2]
+        mw = extrapolate(zp, mwp)
+        P = extrapolate(zp, Pp)
         rho_p = Pp .* (mwp ./ mol) ./ (R * Tp) # ideal gas law
-        rho = LinearInterpolation(zp, rho_p)
-        rlheat = LinearInterpolation(zp, rlheatp)
-        new(planet_radius, surface_gravity, mw, P, rho, rlheat, cₚ, fsed, mh, ϵ, ϵₖ, zp[length(zp)÷2])
+        rho = extrapolate(zp, rho_p)
+        rlheat = extrapolate(zp, rlheatp)
+        new(planet_radius, surface_gravity, mw, P, rho, rlheat, mw(zref), cₚ, mh, ϵₖ, d_molecule, zref)
     end
 end
-
 
 gravity(mass::Mass, radius::Length) = G * mass / (radius ^ 2)
 gas_constant(atm::Atmosphere, z::Length) = R / atm.mw(z)
@@ -60,6 +59,10 @@ end
 scale_height(atm::Atmosphere, T::Temperature) = gas_constant(atm, atm.zref) * T / atm.surface_gravity
 # dHdP to be handled with autodiff
 @warn "temp_at_pressure doesn't exist any more, do some chain rule stuff"
-lapse_ratio(T::Temperature, p::Pressure, atm::Atmosphere) = p * derivative(atm.temp_at_pressure, p) / (T / atm.cₚ)
-mixing_length(T::Temperature, p::Pressure, atm::Atmosphere) = max(0.1, lapse_ratio(T, p, atm)) * scale_height(T, atm)
-qvs(T::Temperature, p::Pressure, e::Element, atm::Atmosphere) = (atm.supsat + 1) * vaporpressure(e, T, p) / (gas_constant(atm, atm.zref) * T / (atmosphere_density(T, p, atm)))
+lapse_ratio( atm::Atmosphere, T::Temperature, p::Pressure) = p * derivative(atm.temp_at_pressure, p) / (T / atm.cₚ)
+mixing_length( atm::Atmosphere, T::Temperature, p::Pressure) = max(0.1, lapse_ratio(T, p, atm)) * scale_height(T, atm)
+
+"""
+Mass mixing ratio of saturated vapor of element e.
+"""
+qvs(atm::Atmosphere, e::Element, T::Temperature, p::Pressure) = (atm.supsat + 1) * vaporpressure(e, T, p) / (gas_constant(atm, atm.zref) * T / (atmosphere_density(T, p, atm)))
