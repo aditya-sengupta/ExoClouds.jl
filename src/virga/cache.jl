@@ -9,7 +9,7 @@ struct VirgaCache
     fsed::Float64
     sig::Float64
     alpha_pressure::Pressure{Float64}
-    temperature::Vector{Temperature{Float64}}
+    temperature::Extrapolation
     layer_temperature::Vector{Temperature{Float64}}
     layer_pressure::Vector{Pressure{Float64}}
     kz::Vector{Float64}
@@ -56,12 +56,9 @@ struct VirgaCache
         z_temp = layer_dz |> reverse |> cumsum |> reverse
         z_alpha = z_temp[p_alpha]
         
-        new(fsed, sig, alpha_pressure, temperature, layer_temperature, layer_pressure, kz, layer_dz, z_alpha)
+        new(fsed, sig, alpha_pressure, LinearInterpolation(atm.zp, temperature, extrapolation_bc=Flat()), layer_temperature, layer_pressure, kz, layer_dz, z_alpha)
     end
 end
 
-# get_kz_mixl
-
-p_alpha = find_nearest_1d(self.p_layer/1e6, self.alpha_pressure)
-z_temp = np.cumsum(self.dz_layer[::-1])[::-1]
-self.z_alpha = z_temp[p_alpha]
+lapse_ratio(atm::Atmosphere, cache::Cache, z::Length) = p * derivative(cache.temperature, z) / (T * derivative(atm.P, z) / atm.cₚ)
+mixing_length(atm::Atmosphere, cache::Cache, z::Length) = max(0.1, lapse_ratio(atm, cache, z)) * scale_height(T, atm)

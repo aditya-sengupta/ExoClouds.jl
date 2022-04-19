@@ -1,9 +1,7 @@
-using Unitful: R
-using Unitful: Length, Acceleration, Mass, Temperature, Pressure, DynamicViscosity, Density
-using Unitful: ustrip
 using LinearAlgebra: ⋅
 
 using ..Elements
+using Distributions: UnivariateDistribution
 
 function advdiff_const(
     qₜ::AbstractFloat,

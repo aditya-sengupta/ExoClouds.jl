@@ -1,10 +1,7 @@
 using Unitful: Acceleration, Length, Mass, Temperature, Pressure # dimensions
 using Unitful: cm, K, u # units
 using Unitful: k, R, G # constants
-using ForwardDiff
-using Interpolations: LinearInterpolation, extrapolate
-
-using Elements
+using Interpolations: LinearInterpolation, Extrapolation
 
 """
 The structural model aspects of a CARMA/virga run.
@@ -12,14 +9,13 @@ The structural model aspects of a CARMA/virga run.
 struct Atmosphere
     planet_radius::Length{Float64}
     surface_gravity::Acceleration{Float64}
-    # xy::Horizontal{Nxy}
-    # z::Vertical{Nz}
     # these are kiiiind of treated as dynamic variables by CARMA
     # I'm going to assume they're provided as discrete functions
     # and the Extrapolation object will let us linearly interpolate on that
     # this simulation does not discretize on z just yet, but there's no other way to get P, T etc profiles
     # so we interface with these as if they're continuous, write PDEs on them, then discretize those back.
 
+    # I don't love this because it's an abstract type and for performance I should really specify it statically
     mw::Extrapolation # Molar weight(z) 
     P::Extrapolation # Pressure(z)
     rho::Extrapolation # Atmosphere density(z) (not calling it ρ because it l.ooks too similar to p)
@@ -34,16 +30,15 @@ struct Atmosphere
     function Atmosphere(
             planet_radius::Length{Float64}, 
             surface_gravity::Acceleration{Float64}, 
-            # xycoords::Horizontal, zcoords::Vertical, 
             zp::Vector{Length{Float64}}, Pp::Vector{Pressure{Float64}}, mwp::Vector{Mass{Float64}}, rlheatp::Vector{TemperatureFlux{Float64}},
             cₚ::Float64=3.5, mh::Float64=1.0, ϵₖ::Temperature{Float64} = 59.7 * K, d_molecule::Length{Float64} = 2.827e-8cm
         )
         zref = zp[length(zp)÷2]
-        mw = extrapolate(zp, mwp)
-        P = extrapolate(zp, Pp)
+        mw = LinearInterpolation((zp,), mwp, extrapolation_bc=Flat())
+        P =  LinearInterpolation((zp,), Pp, extrapolation_bc=Flat())
         rho_p = Pp .* (mwp ./ mol) ./ (R * Tp) # ideal gas law
-        rho = extrapolate(zp, rho_p)
-        rlheat = extrapolate(zp, rlheatp)
+        rho =  LinearInterpolation((zp,), rho_p, extrapolation_bc=Flat())
+        rlheat =  LinearInterpolation((zp,), rlheatp, extrapolation_bc=Flat())
         new(planet_radius, surface_gravity, mw, P, rho, rlheat, mw(zref), cₚ, mh, ϵₖ, d_molecule, zref)
     end
 end
@@ -57,12 +52,9 @@ function mean_free_path(atm::Atmosphere, T::Temperature, p::Pressure)
 end
 
 scale_height(atm::Atmosphere, T::Temperature) = gas_constant(atm, atm.zref) * T / atm.surface_gravity
-# dHdP to be handled with autodiff
-@warn "temp_at_pressure doesn't exist any more, do some chain rule stuff"
-lapse_ratio(atm::Atmosphere, T::Temperature, p::Pressure) = p * derivative(atm.temp_at_pressure, p) / (T / atm.cₚ)
-mixing_length(atm::Atmosphere, T::Temperature, p::Pressure) = max(0.1, lapse_ratio(T, p, atm)) * scale_height(T, atm)
 
 """
 Mass mixing ratio of saturated vapor of element e.
 """
 qvs(atm::Atmosphere, e::Element, T::Temperature, p::Pressure) = (atm.supsat + 1) * vaporpressure(e, T, p) / (gas_constant(atm, atm.zref) * T / (atmosphere_density(T, p, atm)))
+mixing_ratio(e::Element, atm::Atmosphere) = mixing_ratio(e, atm.mmw, atm.mh)

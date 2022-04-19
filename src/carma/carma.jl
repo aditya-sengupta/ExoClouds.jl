@@ -1,13 +1,27 @@
 module CARMA
-   include("utils.jl")
+    include("../units.jl")
+    include("utils.jl")
+
+    using StaticArrays: MArray
+
+    using ..Elements
+    using ..Physics
 
     # the CARMA state is an implicit function of t and z
     # when we discretize along z, we'll get States for each z
-    mutable struct State{NBIN,NELEM,NGAS}
-        particle_concentration::MArray{(NBIN,NELEM),Float64}
-        gas_concentration::MArray{(NGAS),Float64}
-        temperature::Float64
+    mutable struct State{S <: Tuple, G <: Tuple}
+        particle_concentration::MArray{S,Float64}
+        gas_concentration::MArray{G,Float64}
+        temperature::Temperature{Float64}
+
+        function State(particle_concentration::AbstractArray, gas_concentration::AbstractArray, temperature::Temperature{Float64})
+            new{Tuple{size(particle_concentration)...},Tuple{size(gas_concentration)...}}(
+                particle_concentration, gas_concentration, temperature
+            )
+        end
     end
+
+    include("particle.jl")
 
     ## I think these are just constants for everything I'm doing
     # cloud_fraction::Float64

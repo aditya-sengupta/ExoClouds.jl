@@ -53,7 +53,7 @@ element we care about.
 function make_AM4_problem(atm::Atmosphere, e::Element, Tp::Vector{Temperature{Float64}})
     # virga's calc_qc, but only the model and not the numerical solution
     # or the steps after: I'll plan to come back to this
-    T_extr = extrapolate(atm.zp, Tp)
+    T_extr = LinearInterpolation((atm.zp,), Tp, extrapolation_bc=Flat())
     function AM4(z::Float64, q::Float64)
         # try making this mutable for speed? 
         # i doubt it'll help in the scalar case, but a benchmark test case may be useful
@@ -124,8 +124,8 @@ function generate_altitude(
     refine_tp::Bool=true, ϵ::Float64=10.0
 )
     H = T -> scale_height(T, atm)
-    T_p = extrapolate(pres, temp)
-    Kz_p = extrapolate(pres, atm.kz) # TODO check out why atm.kz is supposed to be an array?
+    T_p = LinearInterpolation((pres,), temp, extrapolation_bc=Flat())
+    Kz_p = LinearInterpolation((pres,), atm.kz, extrapolation_bc=Flat())
     if refine_tp
         println("refine_tp looks complicated and unnecessary, I'll do it later")
     end

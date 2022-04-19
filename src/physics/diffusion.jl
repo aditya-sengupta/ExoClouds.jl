@@ -1,8 +1,3 @@
-using Unitful
-using Unitful: R
-
-@derived_dimension MassDiffusivity 𝐋^2*𝐓^-1 true
-
 function Ft_Fv(z::Length, Dp, κₐ, cₚ, is_ice::Bool)
     
     reyn_shape = re(z)

@@ -57,7 +57,7 @@ function sulfuric_nucleation_rate(acid::H₂SO₄, conc_water::Density, conc_aci
     pa = h2so4ln .- seqln
 
     # Create 2-component solutions of varying composition c1 and c2
-    c1 = pa. - pb .* wtmolr
+    c1 = pa .- pb .* wtmolr
     c2 = pa .* dnwf .+ pb * (1 .- dnwf) .* wtmolr
 
     # Now loop through until we find the c1+c2 combination with minimum Gibbs free energy

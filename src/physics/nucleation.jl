@@ -56,7 +56,7 @@ function het_nucleation(
     x = r / a
     ϕ = sqrt(1 - 2 * μ * x + x^2)
     f₀ = (x - μ) / ϕ
-    f = (1/2) * (1 + ((1 - μ * x) / ϕ)^3 + x^3 * (2 - 3 * f₀ + f₀^3) + 3 * μ * x^2 (f₀ - 1))
+    f = (1/2) * (1 + ((1 - μ * x) / ϕ)^3 + x^3 * (2 - 3 * f₀ + f₀^3) + 3 * μ * x^2 * (f₀ - 1))
     exp_argument = (F_des - F * f) / k * T
     Z = zeldovich(F, T, 4π/3 * ρ * a^3 / m)
         

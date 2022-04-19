@@ -21,4 +21,5 @@ function radius_to_bin(particle::Particle, radius::Length)
         return 1
     else
         return 2 + Int(floor(log(radius / particle.radius_min) / log(particle.radius_ratio)))
+    end
 end

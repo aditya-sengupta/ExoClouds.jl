@@ -3,11 +3,10 @@ module Virga
     using Roots
     using Plots
 
-    using Unitful: Mass, Pressure, Temperature
-    using Unitful: bar, K
-
     using ..Elements
+    using ..Physics
 
+    include("../units.jl")
     include("roots.jl")
     include("utils.jl")
     export find_cond_t
@@ -38,7 +37,7 @@ module Virga
 
         function choice(gas::Element)::Bool
             cond_p, cond_t = condensation_t(atm, gas)
-            interp_cond_t = (extrapolate(cond_p, cond_t)).(each(atm.P))
+            interp_cond_t = (LinearInterpolation((cond_p,), cond_t, extrapolation_bc=Flat())).(each(atm.P))
             diff_curve = temperature .- interp_cond_t
             rec = (maximum(diff_curve) > 0.0K) && (minimum(diff_curve) < 0.0K)
             if makeplot
