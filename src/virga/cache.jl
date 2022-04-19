@@ -6,26 +6,28 @@ Note: the pressure, temperature etc that get passed into the constructor here ar
 I don't like that this is so grid dependent — I'd prefer to have continuous functions that are evaluated on the fly. But for now I just need something that works here.
 """
 struct VirgaCache
+    gases::Vector{Element}
     fsed::Float64
     sig::Float64
     alpha_pressure::Pressure{Float64}
     temperature::Extrapolation
     # layer_temperature::Vector{Temperature{Float64}}
     # layer_pressure::Vector{Pressure{Float64}}
-    kz::Vector{Float64}
+    Kzz::Vector{KinematicViscosity{Float64}}
     # layer_dz::Vector{Length{Float64}}
     z_alpha::Length{Float64}
 
     function VirgaCache(
         atm::Atmosphere,
-        fsed::Float64=0.5,
-        sig::Float64=2.0,
+        gases::Vector{Element},
         pressure::Vector{Pressure{Float64}},
         temperature::Vector{Temperature{Float64}},
         alpha_pressure::Union{Nothing,Pressure{Float64}}=nothing,
-        kz::Union{Nothing,Vector{Float64}}=nothing,
-        chf::Union{Nothing,Vector{Float64}}=nothing;
-        convective_overshoot = 1/3
+        kz::Union{Nothing,Vector{KinematicViscosity{Float64}}}=nothing,
+        chf::Union{Nothing,Vector{Float64}}=nothing,        
+        fsed::Float64=0.5,
+        sig::Float64=2.0;
+        convective_overshoot = 1/3, kwargs...
     )
         if isnothing(alpha_pressure)
             alpha_pressure = minimum(pressure)
@@ -56,7 +58,7 @@ struct VirgaCache
         z_temp = layer_dz |> reverse |> cumsum |> reverse
         z_alpha = z_temp[p_alpha]
         
-        new(fsed, sig, alpha_pressure, LinearInterpolation(atm.zp, temperature, extrapolation_bc=Flat()), layer_temperature, layer_pressure, kz, layer_dz, z_alpha)
+        new(gases, fsed, sig, alpha_pressure, LinearInterpolation(atm.zp, temperature, extrapolation_bc=Flat()), layer_temperature, layer_pressure, kz, layer_dz, z_alpha)
     end
 end
 

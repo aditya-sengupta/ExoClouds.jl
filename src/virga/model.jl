@@ -83,13 +83,13 @@ function optical_for_layer(
     fsed::Float64,
     mixlength::Length{Float64},
     z_bot::Length{Float64},
-    rho_p::Density{Float64};
     f::fsedParam=fsedConst(),
     vfallsolver::VfallSolution=OGVfall()
 )
-
+    qc_path = 0.0
     qvs_val = qvs(atm, e, T, p)
     if qt_below < qvs_val
+        throw("need to determine the output signature and put zeros in all of them")
         return 0.0 # or whatever
     end
 
@@ -111,37 +111,49 @@ function optical_for_layer(
     fsed_mid = get_fsed_mid(f, cache, fsed)
     rg_layer = (fsed_mid^(1/alpha)) * rw_layer * exp(-(alpha+6) * lnsig2)
     reff_layer = rg_layer * exp(5 * lnsig2)
-    ndz_layer = (3*atm.rho(atm.zref) .* qc_layer .* dz_layer ./ (4π * rho_p*rg_layer^3 ) * exp(-9*lnsig2))
+    ndz_layer = (3*atm.rho(atm.zref) .* qc_layer .* dz_layer ./ (4π * density(e) * rg_layer^3 ) * exp(-9*lnsig2))
     return qt_top, qc_sub, qt_sub, reff_layer, ndz_layer
 end
 
 """
-Refine temperature pressure profile according to maximum temperature-difference between pressure layers.
+Refine temperature pressure profile according to maximum temperature-difference between pressure layers, and make a Virga atmosphere object.
 """
-function generate_altitude(
-    temp::Vector{<:Temperature}, pres::Vector{<:Pressure}, atm::Atmosphere;
-    refine_tp::Bool=true, ϵ::Float64=10.0
+function atmosphere_virga(
+    temperature::Vector{Temperature{Float64}}, pressure::Vector{Pressure{Float64}}, Kzzs::Vector{KinematicViscosity{Float64}} mwp::Mass{Float64}, planet_radius::Length{Float64}, 
+    surface_gravity::Acceleration{Float64};
+    refine_tp::Bool=true, ϵ::Temperature{Float64}=10.0K,
+    kwargs...
 )
-    H = T -> scale_height(T, atm)
-    T_p = LinearInterpolation((pres,), temp, extrapolation_bc=Flat())
-    Kz_p = LinearInterpolation((pres,), atm.kz, extrapolation_bc=Flat())
+    n = length(pressure)
+    T_p = LinearInterpolation((pressure,), temperature, extrapolation_bc=Flat())
+    Kz_p = LinearInterpolation((pressure,), Kzzs, extrapolation_bc=Flat())
+
     if refine_tp
-        println("refine_tp looks complicated and unnecessary, I'll do it later")
+        temps = T_p.(pressure)
+        dtemps = abs(diff(temps))
+        while maximum(dtemps) > ϵ
+            indx = findfirst(dtemps .> ϵ)
+            mids = (pressure[indx+1] + pressure[indx]) / 2
+            insert!(pressure, indx+1, mids)
+        end
     end
-    logp = log.(pres)
-    dz = -H.(T_p.(pres[1:end-1])) .* diff(logp)
-    z = cumsum(dz) # may be off by one or something
-    return z, Atmosphere(
-        atm.gravity,
-        Kz_p.(pres),
-        atm.fsed,
-        atm.mh,
-        atm.mean_molecular_weight,
-        atm.cₚ,
-        atm.molecule_diameter,
-        Spline1D(z, pres),
-        Spline1D(z, temp),
-        T_p,
-        atm.supsat
+
+    T = zeros(n)
+    K = zeros(n)
+    T[1:end-1] = T_p.(pressure[1:end-1])
+    T[end] = temperature[end]
+    K[1:end-1] = Kz_p.(pressure[1:end-1])
+    K[end] = Kzzs[end]
+
+    logp = log.(reverse(pres_))
+    dz = -scale_height.(atm, T[1:end-1]) .* diff(logp)
+    z = cumsum(dz)
+    prepend!(0m, z)
+    
+    atm = Atmosphere(
+        planet_radius,
+        surface_gravity,
+        z, pressure, mwp .* ones(length(z)); kwargs...
     )
+    return atm, T, K
 end
