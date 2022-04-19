@@ -52,7 +52,7 @@ function density(::H₂SO₄; wtp::Float64=0.0, T::Temperature=0K)
     return sig1 * frac + sig2 * (1.0-frac) * g/cm^3 # TODO check this 
 end
     
-function surface_tension(::H₂SO₄, T::Temperature=0K; wtp::Float64=0)
+function surface_tension(::H₂SO₄, T::Temperature=0K; wtp::Float64=0.0)
     @warn "Make sure you passed in the correct kwargs to surface_tension for H₂SO₄! The default call will probably give something nonsensical."
     if (wtp < 0.0 || wtp > 100.0) then
         throw("Illegal value for wtp: $(wtp). Occurred at temp = $(T)")

@@ -2,11 +2,12 @@ module Physics
     using ..Elements
 
     include("../units.jl")
+    include("utils.jl")
     include("atmosphere.jl")
     export Atmosphere
-    
-    include("coagulation.jl")
+
     include("diffusion.jl")
+    include("coagulation.jl")
     # include("heating.jl") - later
     include("mie.jl")
     export mie_efficiencies
