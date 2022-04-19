@@ -83,7 +83,7 @@ function optical_for_layer(
     fsed::Float64,
     mixlength::Length{Float64},
     z_bot::Length{Float64},
-    rho_p::Density{Float64},
+    rho_p::Density{Float64};
     f::fsedParam=fsedConst(),
     vfallsolver::VfallSolution=OGVfall()
 )
@@ -112,12 +112,11 @@ function optical_for_layer(
     rg_layer = (fsed_mid^(1/alpha)) * rw_layer * exp(-(alpha+6) * lnsig2)
     reff_layer = rg_layer * exp(5 * lnsig2)
     ndz_layer = (3*atm.rho(atm.zref) .* qc_layer .* dz_layer ./ (4π * rho_p*rg_layer^3 ) * exp(-9*lnsig2))
-    return ndz_layer
+    return qt_top, qc_sub, qt_sub, reff_layer, ndz_layer
 end
 
 """
 Refine temperature pressure profile according to maximum temperature-difference between pressure layers.
-why is this the description of a function called `generate_altitude`? Shouldn't it be `refine_tp_profile` or something? I guess it does both
 """
 function generate_altitude(
     temp::Vector{<:Temperature}, pres::Vector{<:Pressure}, atm::Atmosphere;

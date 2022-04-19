@@ -58,3 +58,7 @@ Mass mixing ratio of saturated vapor of element e.
 """
 qvs(atm::Atmosphere, e::Element, T::Temperature, p::Pressure) = (atm.supsat + 1) * vaporpressure(e, T, p) / (gas_constant(atm, atm.zref) * T / (atmosphere_density(T, p, atm)))
 mixing_ratio(e::Element, atm::Atmosphere) = mixing_ratio(e, atm.mmw, atm.mh)
+    # atmospheric viscosity
+    # EQN B2 in A & M 2001, originally from Rosner+2000
+    # Rosner, D. E. 2000, Transport Processes in Chemically Reacting Flow Systems (Dover: Mineola)
+viscosity(atm::Atmosphere, T::Temperature) = (5/16) * sqrt(π * k * T * (atm.mw / Na)) / (π * atm.d_molecule^2) / (1.22 * (T / atm.ϵₖ))

@@ -1,5 +1,5 @@
 using Unitful
-using Unitful: bar, K
+using Unitful: bar, K, erg, g
 using Unitful: R, k, Na, σ, c, h
 using Unitful: Temperature, Mass, Length, Density, DynamicViscosity, Acceleration, Pressure, Energy, Frequency, Velocity
 using Unitful: 𝐓, 𝚯, 𝐋, 𝐌

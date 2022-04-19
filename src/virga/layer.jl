@@ -1,7 +1,3 @@
-
-using Unitful: Na, k, R
-using Unitful: erg, K, g
-
 """
 Calculate layer condensate properties by iterating on optical depth
 in one model layer (convering on optical depth over sublayers)
@@ -25,31 +21,16 @@ kz : float
     eddy diffusion coefficient (cm^2/s)
 mixl : float 
     Mixing length (cm)
-gravity : float 
-    Gravity of planet cgs 
-mw_atmos : float 
-    Molecular weight of the atmosphere 
 gas_mw : float 
     Gas molecular weight 
 q_below : float 
     total mixing ratio (vapor+condensate) below layer (g/g)
 supsat : float 
     Super saturation factor
-fsed : float
-    Sedimentation efficiency coefficient (unitless) 
-b : float
-    Denominator of exponential in sedimentation efficiency  (if param is 'exp')
-eps: float
-    Minimum value of fsed function (if param=exp)
 z_top : float
     Altitude at top of layer
 z_bot : float
     Altitude at bottom of layer
-z_alpha : float
-    Altitude at which fsed=alpha for variable fsed calculation
-param : str
-    fsed parameterisation
-    'const' (constant), 'exp' (exponential density derivation)
 sig : float 
     Width of the log normal particle distribution 
 mh : float 
@@ -62,15 +43,6 @@ d_molecule : float
     diameter of atmospheric element (cm) (Rosner, 2000)
     (3.711e-8 for air, 3.798e-8 for N2, 2.827e-8 for H2)
     Set in Atmosphere constants 
-eps_k : float 
-    Depth of the Lennard-Jones potential well for the atmosphere 
-    Used in the viscocity calculation (units are K) (Rosner, 2000)
-c_p_factor : float 
-    specific heat of atmosphere (erg/K/g) . Usually 7/2 for ideal gas
-    diatomic molecules (e.g. H2, N2). Technically does slowly rise with 
-    increasing temperature
-og_vfall : bool 
-    Use original or new vfall calculation
 Returns
 -------
 qc_layer : ndarray 
@@ -88,18 +60,19 @@ q_below : ndarray
 nsub : Int
     number of levels of grid refinement used
 """
-function layer(gas, rho_p, t_layer, p_layer, t_top, t_bot, p_top, p_bot,
-    q_below, supsat, b, z_top, z_bot, z_alpha, z_min, param,
-    sig, mh, rmin, nrad, d_molecule, og_vfall, z_cld;
-    nsub_max = 128, nsub = 1)
+function layer(atm::Atmosphere, cache::VirgaCache, gas::Element, ρₚ::Density, zs::Tuple, ps::Tuple, Ts::Tuple,
+    sig; f::fsedParam=fsedConst(),
+    vfallsolver::VfallSolution=OGVfall(),
+    nsub_max = 128)
+
+    z_bot, _, z_top = zs
+    p_bot, p_layer, p_top, ps
+    t_bot, t_layer, t_top = Ts
 
     r_atmos = gas_constant(atm)
 
-    #specific gas constant for cloud (erg/K/g)
+    #specific gas constant for cloud
     r_cloud = R / molecular_weight(gas)
-
-    #   specific heat of atmosphere (erg/K/g)
-    c_p = atm.cₚ * r_atmos
 
     #   pressure thickness of layer
     dp_layer = p_bot - p_top
@@ -107,26 +80,16 @@ function layer(gas, rho_p, t_layer, p_layer, t_top, t_bot, p_top, p_bot,
 
     #   temperature gradient 
     dtdlnp = (t_top - t_bot) / dlnp
-    lapse_ratio = (t_bot - t_top) / dlnp / (t_layer / atm.cₚ)
-
-    #   atmospheric density (g/cm^3)
-    rho_atmos = p_layer / (r_atmos * t_layer)
-
     #   atmospheric scale height
-    scale_h = r_atmos * t_layer / atm.gravity    
+    scale_h = scale_height(atm, t_layer)
 
     #   convective velocity scale from mixing length theory
     w_convect = atm.kz / mixing_length(atm) 
-
-    mfp = mean_free_path(atm, t_layer, p_layer)
-
-    # atmospheric viscosity
-    # EQN B2 in A & M 2001, originally from Rosner+2000
-    # Rosner, D. E. 2000, Transport Processes in Chemically Reacting Flow Systems (Dover: Mineola)
-    visc = (5/16 * sqrt(pi*k*t_layer*(mw_atmos/Na)) / (pi * d_molecule^2) / (1.22 * (t_layer / atm.ϵₖ)^(-0.16)))
+    visc = viscosity(atm, t_layer)
 
     #   --------------------------------------------------------------------
-    #   Top of convergence loop    
+    #   Top of convergence loop  
+    nsub = 1  
     converge = false
     while !converge
         #   Zero cumulative values
@@ -135,7 +98,7 @@ function layer(gas, rho_p, t_layer, p_layer, t_top, t_bot, p_top, p_bot,
         ndz_layer = 0.
         opd_layer = 0.        
 
-        #   total mixing ratio and pressure at bottom of sub-layer
+        # total mixing ratio and pressure at bottom of sub-layer
 
         qt_bot_sub = q_below
         p_bot_sub = p_bot
@@ -153,13 +116,8 @@ function layer(gas, rho_p, t_layer, p_layer, t_top, t_bot, p_top, p_bot,
             z_top_sub = z_bot_sub + dz_sub
             z_sub = z_bot_sub + scale_h * log(p_bot_sub / p_sub) # midpoint of layer 
             ################################################
-            t_sub = t_bot + log(p_bot/p_sub) * dtdlnp
-            qt_top, qc_sub, qt_sub, rg_sub, reff_sub,ndz_sub, z_cld, fsed_layer = calc_qc(
-                    gas_name, supsat, t_sub, p_sub,r_atmos, r_cloud,
-                        qt_below, dz_sub,visc,
-                        rho_p,w_convect, fsed, b, eps, param, z_bot_sub, z_sub, z_alpha, z_min,
-                        sig,mh, rmin, nrad, og_vfall,z_cld)
-
+            qt_top, qc_sub, qt_sub, reff_sub, ndz_sub = optical_for_layer(atm, cache, e, qt_below, atm.fsed, mixlength,
+            z_sub, ρₚ; f=f, vfallsolver=vfallsolver)
 
             #   vertical sums
             qc_layer = qc_layer + qc_sub*dp_sub/gravity
@@ -167,10 +125,10 @@ function layer(gas, rho_p, t_layer, p_layer, t_top, t_bot, p_top, p_bot,
             ndz_layer = ndz_layer + ndz_sub
 
             if reff_sub > 0.
-                opd_layer = (opd_layer + 1.5*qc_sub*dp_sub/gravity/(rho_p*reff_sub))
+                opd_layer = (opd_layer + 1.5*qc_sub*dp_sub/atm.surface_gravity/(ρₚ*reff_sub))
             end
     
-            #   Increment values at bottom of sub-layer
+            # Increment values at bottom of sub-layer
 
             qt_bot_sub = qt_top
             p_bot_sub = p_top_sub
@@ -184,7 +142,7 @@ function layer(gas, rho_p, t_layer, p_layer, t_top, t_bot, p_top, p_bot,
             opd_test = opd_layer
         elseif (opd_layer == 0.) || (nsub >= nsub_max)
             converge = true
-        elseif (abs( 1. - opd_test/opd_layer ) <= 1e-2)
+        elseif (abs(1. - opd_test/opd_layer ) <= 1e-2)
             converge = true
         else
             opd_test = opd_layer

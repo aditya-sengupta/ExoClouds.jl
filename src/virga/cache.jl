@@ -10,10 +10,10 @@ struct VirgaCache
     sig::Float64
     alpha_pressure::Pressure{Float64}
     temperature::Extrapolation
-    layer_temperature::Vector{Temperature{Float64}}
-    layer_pressure::Vector{Pressure{Float64}}
+    # layer_temperature::Vector{Temperature{Float64}}
+    # layer_pressure::Vector{Pressure{Float64}}
     kz::Vector{Float64}
-    layer_dz::Vector{Length{Float64}}
+    # layer_dz::Vector{Length{Float64}}
     z_alpha::Length{Float64}
 
     function VirgaCache(
@@ -60,5 +60,5 @@ struct VirgaCache
     end
 end
 
-lapse_ratio(atm::Atmosphere, cache::Cache, z::Length) = p * derivative(cache.temperature, z) / (T * derivative(atm.P, z) / atm.cₚ)
-mixing_length(atm::Atmosphere, cache::Cache, z::Length) = max(0.1, lapse_ratio(atm, cache, z)) * scale_height(T, atm)
+lapse_ratio(atm::Atmosphere, cache::VirgaCache, z::Length) = p * derivative(cache.temperature, z) / (T * derivative(atm.P, z) / atm.cₚ)
+mixing_length(atm::Atmosphere, cache::VirgaCache, z::Length) = max(0.1, lapse_ratio(atm, cache, z)) * scale_height(T, atm)
