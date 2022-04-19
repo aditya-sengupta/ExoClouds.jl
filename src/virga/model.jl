@@ -6,16 +6,41 @@ using DifferentialEquations
 abstract type fsedParam end
 
 struct fsedConst <: fsedParam end
-struct fsedExpon <: fsedParam 
-    b::Float64
+@with_kw struct fsedExpon <: fsedParam 
+    ϵ::Float64 = 0.01
+    b::Float64 = 1.0
 end
 
-function dq(::fsedConst, fsed, q_below, q_sat, fsed, Δz, mixlength, ϵ)
-    return q_sat + (q_below - q_sat) * exp(-fsed * Δz / mixlength)
+get_fsed_mid(::fsedConst, c::Cache, fsed) = fsed
+get_fsed_mid(f::fsedExpon, c::Cache, fsed) = fsed / exp(cache.z_alpha / f.b)
+
+function dq(::fsedConst, cache::VirgaCache, fsed, q_below, q_sat, mixlength, z_bot)
+    return q_sat + (q_below - q_sat) * exp.(-fsed .* cache.layer_dz ./ mixlength)
 end
 
-function dq(::fsedExpon, fsed, q_below, q_sat, fsed, Δz, mixlength, ϵ)
-    fs = fsed / exp()
+function dq(f::fsedExpon, cache::VirgaCache, fsed, q_below, q_sat, mixlength, z_bot)
+    return q_sat + (q_below - q_sat) * exp((-b * fsed_mid(f, cache, fsed) * exp((z_bot .+ cache.layer_dz) / b - 1) + f.ϵ .* cache.layer_dz) ./ mixlength)
+end
+
+abstract type VfallSolution end
+
+@with_kw struct OGVfall <: VfallSolution
+    rlo::Length{Float64}=1e-10cm,
+    rhi::Length{Float64}=10.0cm
+end
+struct ForceBalance <: VfallSolution
+
+function get_rw_temp(v::OGVfall)
+    function vfall_find_root(...) end
+    find_zero(
+        vfall_find_root,
+        (v.rlo, v.rhi),
+        Roots.Brent()
+    )
+end
+
+function get_rw_temp(::ForceBalance)
+    # solve_force_balance
 end
 
 """
@@ -47,12 +72,20 @@ e : the condensate being considered
 qt_below : total mixing ratio below the layer
 T : temperature at the midpoint of the layer
 p : pressure at the midpoint of the layer
+
+Direct parameters here should only be things that could vary run to run: everything else gets passed off to VirgaCache to keep the scope clean.
 """
 function optical_for_layer(
+    atm::Atmosphere,
+    cache::VirgaCache,
     e::Element,
     qt_below::Float64,
-    T::Temperature{Float64},
-    p::Pressure{Float64}
+    fsed::Float64,
+    mixlength::Length{Float64},
+    z_bot::Length{Float64},
+    rho_p::Density{Float64},
+    f::fsedParam=fsedConst(),
+    vfallsolver::VfallSolution=OGVfall()
 )
 
     qvs_val = qvs(atm, e, T, p)
@@ -60,9 +93,26 @@ function optical_for_layer(
         return 0.0 # or whatever
     end
 
-    q_range = (qt_below / 1000, qt_below)
-
+    qt_top = dq(f, cache, fsed, qt_below, qvs_val, mixlength, z_bot)
     
+    qt_layer = (1/2) * (qt_below .+ qt_top)
+    qc_layer = maximum.(0, qt_layer - qvs_val)
+
+    rw_temp = get_rw_temp(vfallsolver)
+    lnsig2 = 0.5 * log(cache.sig)^2
+    sig_alpha = max(1.1, sig)
+    r_, _, _ = get_r_grid(...) # TODO 
+    vfall_temp = zeros(length(r_))
+    for j = 1:length(r_)
+        vfall_temp[j] = get_vfall_temp(::vfallsolver, ...) # TODO
+    end
+    pars = linregress(r_, log.(vfall_temp)) |> coef
+    alpha = pars[1]
+    fsed_mid = get_fsed_mid(f, cache, fsed)
+    rg_layer = (fsed_mid^(1/alpha)) * rw_layer * exp(-(alpha+6) * lnsig2)
+    reff_layer = rg_layer * exp(5 * lnsig2)
+    ndz_layer = (3*atm.rho(atm.zref) .* qc_layer .* dz_layer ./ (4π * rho_p*rg_layer^3 ) * exp(-9*lnsig2))
+    return ndz_layer
 end
 
 """

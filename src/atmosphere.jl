@@ -59,8 +59,8 @@ end
 scale_height(atm::Atmosphere, T::Temperature) = gas_constant(atm, atm.zref) * T / atm.surface_gravity
 # dHdP to be handled with autodiff
 @warn "temp_at_pressure doesn't exist any more, do some chain rule stuff"
-lapse_ratio( atm::Atmosphere, T::Temperature, p::Pressure) = p * derivative(atm.temp_at_pressure, p) / (T / atm.cₚ)
-mixing_length( atm::Atmosphere, T::Temperature, p::Pressure) = max(0.1, lapse_ratio(T, p, atm)) * scale_height(T, atm)
+lapse_ratio(atm::Atmosphere, T::Temperature, p::Pressure) = p * derivative(atm.temp_at_pressure, p) / (T / atm.cₚ)
+mixing_length(atm::Atmosphere, T::Temperature, p::Pressure) = max(0.1, lapse_ratio(T, p, atm)) * scale_height(T, atm)
 
 """
 Mass mixing ratio of saturated vapor of element e.
