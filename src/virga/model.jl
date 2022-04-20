@@ -1,28 +1,84 @@
-using Unitful: R
-# using Dierckx: Spline1D
 using Interpolations: LinearInterpolation
 using DifferentialEquations
 
 abstract type VfallSolution end
+abstract type RGSolution end
+
+function find_rg(f, fsed, rg, rw, α)
+    # here, f = f(r, rg), and we integrate over the first argument
+    fsed - moment(r -> f(r, rg), 3+α) / (rw^α) / moment(r -> f(r, rg), 3)
+end
+
+function vfall_find_root(
+    ::OGVfall
+    r::Length,
+    atm::Atmosphere,
+    T::Temperature,
+    e::Element,
+    w_convect::Velocity
+)
+    fall_velocity(r, T, atm.surface_gravity, density(e), atm.rho(atm.zref), atm.mmw, viscosity(atm, T)) - w_convect
+end
 
 @with_kw struct OGVfall <: VfallSolution
     rlo::Length{Float64}=1e-10cm,
     rhi::Length{Float64}=10.0cm
 end
+
 struct ForceBalance <: VfallSolution
 
-function get_rw_temp(v::OGVfall)
-    function vfall_find_root(...) end
+function get_rw(v::OGVfall, atm::Atmosphere, T::Temperature, e::Element, w_convect::Velocity)
     find_zero(
-        vfall_find_root,
+        r -> vfall_find_root(v, r, atm, T, e, w_convect),
         (v.rlo, v.rhi),
         Roots.Brent()
     )
 end
 
-function get_rw_temp(::ForceBalance)
-    # solve_force_balance
+function get_rw(::ForceBalance)
+    throw("not implemented")
 end
+
+struct AnalyticalRG <: RGSolution end
+
+function calc_rg(::AnalyticalRG, atm::Atmosphere, c::VirgaCache, e::Element, p::Pressure, T::Temperature, α, qc, dz, rw, f=nothing)
+    lnsig2 = (1/2) * log(c.sig)^2
+    #     EQN. 13 A&M 
+    #   geometric mean radius of lognormal size distribution
+    rg = (c.fsed^(1.0/α) * rw * exp(-(alpha + 6) * lnsig2))
+
+    #   droplet effective radius (cm)
+    reff = rg * exp(5 * lnsig2)
+
+    #      EQN. 14 A&M
+    #   column droplet number concentration (cm^-2)
+    rho_atm = p * gas_constant(atm, atm.zref) / T
+    ndz = (3 * rho_atm * qc * dz /
+                (4π * density(e) * rg^3) * exp(-9 * lnsig2))
+    return rg, reff, ndz
+end
+
+@with_kw struct NumericalRG <: RGSolution 
+    rlo::Length{Float64}=1e-10cm
+    rhi::Length{Float64}=1e2cm
+end
+
+function calc_rg(n::NumericalRG, atm::Atmosphere, c::VirgaCache, e::Element, p::Pressure, T::Temperature, α, qc, dz, rw, f)
+    rg = find_zero(
+        rg -> find_rg(f, c.fsed, rg, rw, α),
+        (n.rlo, n.rhi),
+        Roots.Brent()
+    )
+
+    f_fit = (r -> f(r, rg))
+    reff = moment(f_fit, 3) / moment(f_fit, 2)
+
+    #   column droplet number concentration (cm^-2)
+    rho_atm = p * gas_constant(atm, atm.zref) / T
+    ndz = (3 * c.fsed * rw^α * qc * rho_atm * dz) / (4π * density(e) * moment(f_fit, 3 + α))
+    return rg, reff, ndz
+end
+
 
 """
 dq / dz = -fsed * qc(q, z) / mixlength(q, z)
@@ -30,11 +86,23 @@ Ackerman and Marley (2001) equation 4
 This treats each condensate independently, so we express that structurally
 by passing in a element to this function, and broadcasting this over each
 element we care about.
+
+The rest of calc_qc.
+
+e : the condensate being considered
+
+Direct parameters here should only be things that could vary run to run: everything else gets passed off to VirgaCache to keep the scope clean.
 """
-function make_AM4_problem(atm::Atmosphere, c::VirgaCache, e::Element)
-    # virga's calc_qc, but only the model and not the numerical solution
-    # or the steps after: I'll plan to come back to this
-    # T_extr = LinearInterpolation((atm.zp,), c.Tp, extrapolation_bc=Flat())
+function optical_for_layer(
+    atm::Atmosphere,
+    cache::VirgaCache,
+    e::Element,
+    vfallsolver::VfallSolution=OGVfall(),
+    rgsolver::RGSolution=AnalyticRG();
+    rmin=1e-8cm, nrad=60
+)
+    zp = atm.zp
+    nz = length(each(atm.P))
     function AM4(z::Float64, q::Float64)
         # try making this mutable for speed? 
         # i doubt it'll help in the scalar case, but a benchmark test case may be useful
@@ -43,54 +111,40 @@ function make_AM4_problem(atm::Atmosphere, c::VirgaCache, e::Element)
         qc_val = max(0.0, q - qvs(atm, T, p))
         -cache.fsed * qc_val / mixing_length(atm, T, p)
     end
-    ODEProblem(AM4, mixing_ratio(e, atm), (atm.zp[1], atm.zp[end]))
-end
-
-"""
-The rest of calc_qc.
-
-e : the condensate being considered
-qt_below : total mixing ratio below the layer
-T : temperature at the midpoint of the layer
-p : pressure at the midpoint of the layer
-
-Direct parameters here should only be things that could vary run to run: everything else gets passed off to VirgaCache to keep the scope clean.
-"""
-function optical_for_layer(
-    atm::Atmosphere,
-    cache::VirgaCache,
-    e::Element,
-    qt_below::Float64,
-    mixlength::Length{Float64},
-    z_bot::Length{Float64},
-    vfallsolver::VfallSolution=OGVfall()
-)
+    prob = ODEProblem(AM4, mixing_ratio(e, atm), (zp[1], zp[end]))
+    sol = solve(prob, RK23())
+    qt = LinearInterpolation(zp, sol.x, extrapolation_bc=Flat())
+    mixl_out = zeros(n)
+    qt_out = qt.(z)
+    qc_out = maximum.(0.0, qt_out .- qvs.(atm, e, each(c.temperature), each(atm.P)))
+    mixl_out = mixing_length.(atm, c, zp)
+    dz = cat(1e-8cm, diff(zp), dims=1)
+    rw = zeros(nz)
+    rg = zeros(nz)
+    reff = zeros(nz)
+    ndz = zeros(nz)
     qc_path = 0.0
-    qvs_val = qvs(atm, e, T, p)
-    if qt_below < qvs_val
-        throw("need to determine the output signature and put zeros in all of them")
+
+    for (i, z) in enumerate(zp)
+        if qc_out[i] != 0.0 # layer is cloud free
+            P = atm.P(z)
+            T = c.temperature(z)
+            K = c.Kzz(z)
+            w_convect = K / mixl_out[i]
+            rw[i] = get_rw.(vfallsolver, atm, T, e, w_convect)
+            r_, _, _ = get_r_grid(r_min = rmin, n_radii = nrad)
+            vfall_temp = get_rw_temp.(vfallsolver, r_)
+            pars = linregress(r_, log.(vfall_temp)) |> coef
+            α = pars[1]
+            rg[i], reff[i], ndz[i] = calc_rg(rgsolver, atm, c, e, p, T, α, qc, dz, rw) # TODO handle arbitrary f
+        end
+        if i > 1
+            qc_path = (qc_path + qc_out[i-1] *  (p_out[i-1] - p_out[i]) / atm.surface_gravity)
+        end
     end
 
-    qt_top = dq(f, cache, qt_below, qvs_val, mixlength, z_bot)
-    
-    qt_layer = (1/2) * (qt_below .+ qt_top)
-    qc_layer = maximum.(0, qt_layer - qvs_val)
+    return ([reverse(l) for l in [qc_out, qt_out, rg, reff, ndz, dz, mixl_out]])..., qc_path
 
-    rw_temp = get_rw_temp(vfallsolver)
-    lnsig2 = 0.5 * log(cache.sig)^2
-    sig_alpha = max(1.1, sig)
-    r_, _, _ = get_r_grid(...) # TODO 
-    vfall_temp = zeros(length(r_))
-    for j = 1:length(r_)
-        vfall_temp[j] = get_vfall_temp(::vfallsolver, ...) # TODO
-    end
-    pars = linregress(r_, log.(vfall_temp)) |> coef
-    alpha = pars[1]
-    fsed_mid = get_fsed_mid(f, cache)
-    rg_layer = (fsed_mid^(1/alpha)) * rw_layer * exp(-(alpha+6) * lnsig2)
-    reff_layer = rg_layer * exp(5 * lnsig2)
-    ndz_layer = (3*atm.rho(atm.zref) .* qc_layer .* dz_layer ./ (4π * density(e) * rg_layer^3 ) * exp(-9*lnsig2))
-    return qt_top, qc_sub, qt_sub, reff_layer, ndz_layer
 end
 
 """

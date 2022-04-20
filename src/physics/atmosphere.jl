@@ -16,11 +16,12 @@ struct Atmosphere
     # so we interface with these as if they're continuous, write PDEs on them, then discretize those back.
 
     # I don't love this because it's an abstract type and for performance I should really specify it statically
+    zp::Vector{Length{Float64}},
     mw::Extrapolation # Molar weight(z) 
     P::Extrapolation # Pressure(z)
     rho::Extrapolation # Atmosphere density(z) (not calling it ρ because it l.ooks too similar to p)
-    rlheat::Extrapolation # Latent heat(z)
-    mmw::Float64
+    # rlheat::Extrapolation # Latent heat(z)
+    mmw::Mass{Float64}
     cₚ::Float64
     mh::Float64
     ϵₖ::Temperature{Float64}
@@ -47,7 +48,7 @@ struct Atmosphere
 end
 
 gravity(mass::Mass, radius::Length) = G * mass / (radius ^ 2)
-gas_constant(atm::Atmosphere, z::Length) = R / atm.mw(z)
+gas_constant(atm::Atmosphere, z::Length) = R / (atm.mw(z) / mol)
 
 function mean_free_path(atm::Atmosphere, T::Temperature, p::Pressure)
     n_atmos = p / (k * T)
@@ -59,7 +60,12 @@ scale_height(atm::Atmosphere, T::Temperature) = gas_constant(atm, atm.zref) * T 
 """
 Mass mixing ratio of saturated vapor of element e.
 """
-qvs(atm::Atmosphere, e::Element, T::Temperature, p::Pressure) = (atm.supsat + 1) * vaporpressure(e, T, p) / (gas_constant(atm, atm.zref) * T / (atmosphere_density(T, p, atm)))
+
+function qvs(atm::Atmosphere, e::Element, T::Temperature, p::Pressure)
+    denom = p * gas_constant(atm, atm.zref) / T
+    (atm.supsat + 1) * vaporpressure(e, T, p) / ((R / (molecular_weight(e) / mol)) * T) / denom
+end
+
 mixing_ratio(e::Element, atm::Atmosphere) = mixing_ratio(e, atm.mmw, atm.mh)
     # atmospheric viscosity
     # EQN B2 in A & M 2001, originally from Rosner+2000
