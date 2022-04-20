@@ -3,25 +3,6 @@ using Unitful: R
 using Interpolations: LinearInterpolation
 using DifferentialEquations
 
-abstract type fsedParam end
-
-struct fsedConst <: fsedParam end
-@with_kw struct fsedExpon <: fsedParam 
-    ϵ::Float64 = 0.01
-    b::Float64 = 1.0
-end
-
-get_fsed_mid(::fsedConst, c::Cache, fsed) = fsed
-get_fsed_mid(f::fsedExpon, c::Cache, fsed) = fsed / exp(cache.z_alpha / f.b)
-
-function dq(::fsedConst, cache::VirgaCache, fsed, q_below, q_sat, mixlength, z_bot)
-    return q_sat + (q_below - q_sat) * exp.(-fsed .* cache.layer_dz ./ mixlength)
-end
-
-function dq(f::fsedExpon, cache::VirgaCache, fsed, q_below, q_sat, mixlength, z_bot)
-    return q_sat + (q_below - q_sat) * exp((-b * fsed_mid(f, cache, fsed) * exp((z_bot .+ cache.layer_dz) / b - 1) + f.ϵ .* cache.layer_dz) ./ mixlength)
-end
-
 abstract type VfallSolution end
 
 @with_kw struct OGVfall <: VfallSolution
@@ -50,17 +31,17 @@ This treats each condensate independently, so we express that structurally
 by passing in a element to this function, and broadcasting this over each
 element we care about.
 """
-function make_AM4_problem(atm::Atmosphere, e::Element, Tp::Vector{Temperature{Float64}})
+function make_AM4_problem(atm::Atmosphere, c::VirgaCache, e::Element)
     # virga's calc_qc, but only the model and not the numerical solution
     # or the steps after: I'll plan to come back to this
-    T_extr = LinearInterpolation((atm.zp,), Tp, extrapolation_bc=Flat())
+    # T_extr = LinearInterpolation((atm.zp,), c.Tp, extrapolation_bc=Flat())
     function AM4(z::Float64, q::Float64)
         # try making this mutable for speed? 
         # i doubt it'll help in the scalar case, but a benchmark test case may be useful
         p = atm.P(z)
-        T = T_extr(z)
+        T = c.temperature(z)
         qc_val = max(0.0, q - qvs(atm, T, p))
-        -atm.fsed * qc_val / mixing_length(atm, T, p)
+        -cache.fsed * qc_val / mixing_length(atm, T, p)
     end
     ODEProblem(AM4, mixing_ratio(e, atm), (atm.zp[1], atm.zp[end]))
 end
@@ -80,20 +61,17 @@ function optical_for_layer(
     cache::VirgaCache,
     e::Element,
     qt_below::Float64,
-    fsed::Float64,
     mixlength::Length{Float64},
     z_bot::Length{Float64},
-    f::fsedParam=fsedConst(),
     vfallsolver::VfallSolution=OGVfall()
 )
     qc_path = 0.0
     qvs_val = qvs(atm, e, T, p)
     if qt_below < qvs_val
         throw("need to determine the output signature and put zeros in all of them")
-        return 0.0 # or whatever
     end
 
-    qt_top = dq(f, cache, fsed, qt_below, qvs_val, mixlength, z_bot)
+    qt_top = dq(f, cache, qt_below, qvs_val, mixlength, z_bot)
     
     qt_layer = (1/2) * (qt_below .+ qt_top)
     qc_layer = maximum.(0, qt_layer - qvs_val)
@@ -108,7 +86,7 @@ function optical_for_layer(
     end
     pars = linregress(r_, log.(vfall_temp)) |> coef
     alpha = pars[1]
-    fsed_mid = get_fsed_mid(f, cache, fsed)
+    fsed_mid = get_fsed_mid(f, cache)
     rg_layer = (fsed_mid^(1/alpha)) * rw_layer * exp(-(alpha+6) * lnsig2)
     reff_layer = rg_layer * exp(5 * lnsig2)
     ndz_layer = (3*atm.rho(atm.zref) .* qc_layer .* dz_layer ./ (4π * density(e) * rg_layer^3 ) * exp(-9*lnsig2))

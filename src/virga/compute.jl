@@ -25,14 +25,9 @@ Temperature at each layer (K)
 z : ndarray
 altitude of each layer (cm)
 """
-function direct_solver(atm::Atmosphere, cache::VirgaCache, condensibles::Vector{Element}, rmin, nrad;
-    tol = 1e-15, refine_TP=true)
+function direct_solver(atm::Atmosphere, cache::VirgaCache, rmin, nrad; tol = 1e-15)
 
-    ngas = length(condensibles)
-    # refine temperature-pressure profile
-    # this improves the accuracy of the mmr calculation
-    (z, pres, P_z, temp, T_z, T_P, kz) = generate_altitude(pressure, temperature, kzz, gravity, 
-                                                mw_atmos, refine_TP) 
+    ngas = length(cache.gases)
 
     pres_out = pressure
     temp_out = temperature
@@ -48,8 +43,8 @@ function direct_solver(atm::Atmosphere, cache::VirgaCache, condensibles::Vector{
 
     # find mmr and particle distribution for every condensible
     # perform calculation on refined TP profile but output values corresponding to initial profile
-    for (i, gas) in enumerate(condensibles)
-        optical_for_layer(atm, cache, gas, )
+    for (i, gas) in enumerate(cache.gases)
+        optical_for_layer(atm, cache, gas)
     end
         qc, qt, rg, reff, ndz, dz, qc_path[i], mixl = calc_qc(z, P_z, T_z, T_P, kz,
     gravity, gas_name, gas_mw[i], gas_mmr[i], rho_p[i], mw_atmos, mh, fsed, sig, rmin, nrad, 

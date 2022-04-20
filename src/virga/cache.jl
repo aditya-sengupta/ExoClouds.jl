@@ -58,7 +58,11 @@ struct VirgaCache
         z_temp = layer_dz |> reverse |> cumsum |> reverse
         z_alpha = z_temp[p_alpha]
         
-        new(gases, fsed, sig, alpha_pressure, LinearInterpolation(atm.zp, temperature, extrapolation_bc=Flat()), layer_temperature, layer_pressure, kz, layer_dz, z_alpha)
+        new(gases, fsed, sig, alpha_pressure, LinearInterpolation(atm.zp, temperature, extrapolation_bc=Flat()), 
+        # layer_temperature, layer_pressure, 
+        kz, 
+        # layer_dz, 
+        z_alpha)
     end
 end
 
