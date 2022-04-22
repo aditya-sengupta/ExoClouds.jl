@@ -45,7 +45,7 @@ I'm completely ignoring the CARMA implementation here and just going off Pruppac
 """
 function het_nucleation(
     e::Element, r::Length, gas_conc::Density, T::Temperature; 
-    μ::Float64=0.95, F_des::Energy{Float64}=2.9e-13*erg, ν::Frequency{Float64}=1e13*Hz, is_ice=false
+    μ::Float64=0.95, F_des::FloatEner=2.9e-13*erg, ν::FloatFreq=1e13*Hz, is_ice=false
 )
     S = supersaturation(e, gas_conc, T; is_ice=is_ice)
     ρ, M = density(e), molecular_weight(e)

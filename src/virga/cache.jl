@@ -9,21 +9,21 @@ struct VirgaCache
     gases::Vector{Element}
     fsed::Float64
     sig::Float64
-    alpha_pressure::Pressure{Float64}
+    alpha_pressure::FloatPres
     temperature::Extrapolation
-    # layer_temperature::Vector{Temperature{Float64}}
-    # layer_pressure::Vector{Pressure{Float64}}
-    Kzz::Vector{KinematicViscosity{Float64}}
-    # layer_dz::Vector{Length{Float64}}
-    z_alpha::Length{Float64}
+    # layer_temperature::Vector{FloatTemp}
+    # layer_pressure::Vector{FloatPres}
+    Kzz::Vector{FloatKiVi}
+    # layer_dz::Vector{FloatLeng}
+    z_alpha::FloatLeng
 
     function VirgaCache(
         atm::Atmosphere,
         gases::Vector{Element},
-        pressure::Vector{Pressure{Float64}},
-        temperature::Vector{Temperature{Float64}},
-        alpha_pressure::Union{Nothing,Pressure{Float64}}=nothing,
-        kz::Union{Nothing,Vector{KinematicViscosity{Float64}}}=nothing,
+        pressure::Vector{FloatPres},
+        temperature::Vector{FloatTemp},
+        alpha_pressure::Union{Nothing,FloatPres}=nothing,
+        kz::Union{Nothing,Vector{FloatKiVi}}=nothing,
         chf::Union{Nothing,Vector{Float64}}=nothing,        
         fsed::Float64=0.5,
         sig::Float64=2.0;

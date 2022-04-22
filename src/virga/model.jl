@@ -21,8 +21,8 @@ function vfall_find_root(
 end
 
 @with_kw struct OGVfall <: VfallSolution
-    rlo::Length{Float64}=1e-10cm,
-    rhi::Length{Float64}=10.0cm
+    rlo::FloatLeng=1e-10cm,
+    rhi::FloatLeng=10.0cm
 end
 
 struct ForceBalance <: VfallSolution
@@ -59,8 +59,8 @@ function calc_rg(::AnalyticalRG, atm::Atmosphere, c::VirgaCache, e::Element, p::
 end
 
 @with_kw struct NumericalRG <: RGSolution 
-    rlo::Length{Float64}=1e-10cm
-    rhi::Length{Float64}=1e2cm
+    rlo::FloatLeng=1e-10cm
+    rhi::FloatLeng=1e2cm
 end
 
 function calc_rg(n::NumericalRG, atm::Atmosphere, c::VirgaCache, e::Element, p::Pressure, T::Temperature, α, qc, dz, rw, f)
@@ -151,9 +151,9 @@ end
 Refine temperature pressure profile according to maximum temperature-difference between pressure layers, and make a Virga atmosphere object.
 """
 function atmosphere_virga(
-    temperature::Vector{Temperature{Float64}}, pressure::Vector{Pressure{Float64}}, Kzzs::Vector{KinematicViscosity{Float64}} mwp::Mass{Float64}, planet_radius::Length{Float64}, 
-    surface_gravity::Acceleration{Float64};
-    refine_tp::Bool=true, ϵ::Temperature{Float64}=10.0K,
+    temperature::Vector{FloatTemp}, pressure::Vector{FloatPres}, Kzzs::Vector{FloatKiVi} mwp::FloatMass, planet_radius::FloatLeng, 
+    surface_gravity::FloatAccl;
+    refine_tp::Bool=true, ϵ::FloatTemp=10.0K,
     kwargs...
 )
     n = length(pressure)

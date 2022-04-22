@@ -1,7 +1,7 @@
 function condensation_t(
     atm::Atmosphere,
     gas::Element, 
-    pressures::Union{Nothing,Vector{Pressure{Float64}}}=nothing
+    pressures::Union{Nothing,Vector{FloatPres}}=nothing
 )
     if isnothing(pressures)
         pressures = each(atm.P)
@@ -16,7 +16,7 @@ function condensation_t(
     ]
 end
 
-function recommend_gas(atm::Atmosphere, temperature::Vector{Temperature{Float64}}; makeplot=true)
+function recommend_gas(atm::Atmosphere, temperature::Vector{FloatTemp}; makeplot=true)
     p = plot(yaxis=:log10, yflip=true, xlabel="Temperature (K)", ylabel="Pressure (bar)", yticks=10.0 .^(-5:2))
     if makeplot
         plot!(temperature ./ K, pressure ./ bar, label="User", linestyle=:dash, size=(800,600))

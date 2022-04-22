@@ -5,21 +5,33 @@ CARMA has what I'll call a "group-first" structure, where groups are the smalles
 
 I've realized the difference here is I'm thinking about the problem in a Lagrangian (particle-first) way, and CARMA is an Eulerian (field-first) solver. I think Lagrangian is probably the better way for reasons I wrote in the essay, but I'll try not to rock the boat too much just yet.
 """
-@with_kw struct Particle 
+struct Particle 
     # elements::Vector{Element} 
     # you always have to pass this in anyway to specify which one you're talking about
-    radius_min::Length
-    radius_ratio::Float64
-    aspect_ratio::Float64=1 # eshape
-    is_ice::Bool=false
-    ref_idx::Float64=1.0
-    is_cloud::Bool=true
+    radius_min::FloatLeng
+    mass_ratio::Float64
+    radii::Vector{FloatLeng}
+    aspect_ratio::Float64 # eshape
+    is_ice::Bool
+    ref_idx::Float64
+    is_cloud::Bool
+
+    function Particle(
+        # density is tmp_rhop in Fortran
+        radius_min::FloatLeng, mass_ratio::Float64, density::Density, nbin::Int64, is_ice::Bool=false; aspect_ratio::Float64=1.0, ref_idx::Float64=1.0, is_cloud::Bool=true
+    )
+        rmassmin = (4/3 * π) * density * radius_min^3
+        masses = rmassmin .* (mass_ratio) .^ (0:nbin-1)
+        radii = (masses ./ (density / (4/3 * π))) .^ (1/3)
+        new(radius_min, mass_ratio, radii, aspect_ratio, is_ice, ref_idx, is_cloud)
+    end
 end
 
 function radius_to_bin(particle::Particle, radius::Length)
-    if radius < particle.radius_min
-        return 1
+    i = findfirst(radius .< particle.radii)
+    if isnothing(i)
+        return length(particle.radii)
     else
-        return 2 + Int(floor(log(radius / particle.radius_min) / log(particle.radius_ratio)))
+        return i - 1
     end
 end

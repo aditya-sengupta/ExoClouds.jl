@@ -7,8 +7,8 @@ using Interpolations: LinearInterpolation, Extrapolation
 The structural model aspects of a CARMA/virga run.
 """
 struct Atmosphere
-    planet_radius::Length{Float64}
-    surface_gravity::Acceleration{Float64}
+    planet_radius::FloatLeng
+    surface_gravity::FloatAccl
     # these are kiiiind of treated as dynamic variables by CARMA
     # I'm going to assume they're provided as discrete functions
     # and the Extrapolation object will let us linearly interpolate on that
@@ -16,24 +16,24 @@ struct Atmosphere
     # so we interface with these as if they're continuous, write PDEs on them, then discretize those back.
 
     # I don't love this because it's an abstract type and for performance I should really specify it statically
-    zp::Vector{Length{Float64}},
+    zp::Vector{FloatLeng}
     mw::Extrapolation # Molar weight(z) 
     P::Extrapolation # Pressure(z)
     rho::Extrapolation # Atmosphere density(z) (not calling it ρ because it l.ooks too similar to p)
     # rlheat::Extrapolation # Latent heat(z)
-    mmw::Mass{Float64}
+    mmw::FloatMass
     cₚ::Float64
     mh::Float64
-    ϵₖ::Temperature{Float64}
-    d_molecule::Length{Float64}
-    zref::Length{Float64}
+    ϵₖ::FloatTemp
+    d_molecule::FloatLeng
+    zref::FloatLeng
 
     function Atmosphere(
-            planet_radius::Length{Float64}, 
-            surface_gravity::Acceleration{Float64}, 
-            zp::Vector{Length{Float64}}, Pp::Vector{Pressure{Float64}}, mwp::Vector{Mass{Float64}};
+            planet_radius::FloatLeng, 
+            surface_gravity::FloatAccl, 
+            zp::Vector{FloatLeng}, Pp::Vector{FloatPres}, mwp::Vector{FloatMass};
             # rlheatp::Vector{TemperatureFlux{Float64}},
-            cₚ::Float64=3.5, mh::Float64=1.0, ϵₖ::Temperature{Float64} = 59.7 * K, d_molecule::Length{Float64} = 2.827e-8cm, kwargs...
+            cₚ::Float64=3.5, mh::Float64=1.0, ϵₖ::FloatTemp = 59.7 * K, d_molecule::FloatLeng = 2.827e-8cm, kwargs...
         )
         zref = zp[length(zp)÷2]
         mw = LinearInterpolation((zp,), mwp, extrapolation_bc=Flat())
@@ -41,7 +41,7 @@ struct Atmosphere
         rho_p = Pp .* (mwp ./ mol) ./ (R * Tp) # ideal gas law
         rho =  LinearInterpolation((zp,), rho_p, extrapolation_bc=Flat())
         # rlheat =  LinearInterpolation((zp,), rlheatp, extrapolation_bc=Flat())
-        new(planet_radius, surface_gravity, mw, P, rho, 
+        new(planet_radius, surface_gravity, zp, mw, P, rho, 
         # rlheat, 
         mw(zref), cₚ, mh, ϵₖ, d_molecule, zref)
     end
