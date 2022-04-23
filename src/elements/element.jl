@@ -10,8 +10,8 @@ struct MgSiO₃ <: Element end
 struct Mg₂SiO₄ <: Element end
 struct KCl <: Element end
 abstract type H₂O <: Element end
-struct water <: H₂O end
-struct ice <: H₂O end
+struct Water <: H₂O end
+struct Ice <: H₂O end
 struct Fe <: Element end
 struct CH₄ <: Element end
 struct Al₂O₃ <: Element end

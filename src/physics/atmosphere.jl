@@ -1,7 +1,4 @@
-using Unitful: Acceleration, Length, Mass, Temperature, Pressure # dimensions
-using Unitful: cm, K, u # units
-using Unitful: k, R, G # constants
-using Interpolations: LinearInterpolation, Extrapolation
+using Interpolations: LinearInterpolation
 
 """
 The structural model aspects of a CARMA/virga run.
@@ -17,9 +14,9 @@ struct Atmosphere
 
     # I don't love this because it's an abstract type and for performance I should really specify it statically
     zp::Vector{FloatLeng}
-    mw::Extrapolation # Molar weight(z) 
-    P::Extrapolation # Pressure(z)
-    rho::Extrapolation # Atmosphere density(z) (not calling it ρ because it l.ooks too similar to p)
+    mw::LMExtrapolation # Molar weight(z) 
+    P::LPExtrapolation # Pressure(z)
+    rho::LDExtrapolation # Atmosphere density(z) (not calling it ρ because it l.ooks too similar to p)
     # rlheat::Extrapolation # Latent heat(z)
     mmw::FloatMass
     cₚ::Float64
@@ -60,10 +57,10 @@ scale_height(atm::Atmosphere, T::Temperature) = gas_constant(atm, atm.zref) * T 
 """
 Mass mixing ratio of saturated vapor of element e.
 """
-
 function qvs(atm::Atmosphere, e::Element, T::Temperature, p::Pressure)
+    conc = density(e)
     denom = p * gas_constant(atm, atm.zref) / T
-    (atm.supsat + 1) * vaporpressure(e, T, p) / ((R / (molecular_weight(e) / mol)) * T) / denom
+    (supersaturation(e, conc, T) + 1) * vaporpressure(e, T, p) / ((R / (molecular_weight(e) / mol)) * T) / denom
 end
 
 mixing_ratio(e::Element, atm::Atmosphere) = mixing_ratio(e, atm.mmw, atm.mh)
@@ -71,3 +68,9 @@ mixing_ratio(e::Element, atm::Atmosphere) = mixing_ratio(e, atm.mmw, atm.mh)
     # EQN B2 in A & M 2001, originally from Rosner+2000
     # Rosner, D. E. 2000, Transport Processes in Chemically Reacting Flow Systems (Dover: Mineola)
 viscosity(atm::Atmosphere, T::Temperature) = (5/16) * sqrt(π * k * T * (atm.mw / Na)) / (π * atm.d_molecule^2) / (1.22 * (T / atm.ϵₖ))
+
+# coeffs should match scripts/fit_thcond.jl
+function thermal_conductivity(atm::Atmosphere, T::Temperature)
+    Tk = T / K
+    (55.5223 + 0.4609 * Tk - 2.6975e-5 * Tk^2) * mW / m / K
+end

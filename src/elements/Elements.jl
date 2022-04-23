@@ -2,7 +2,7 @@
 Defines various elements that may exist in atmospheres. A specific element is a struct that subtypes Element.
 """
 module Elements
-    include("../units.jl")
+    include("../utils.jl")
     include("../utils.jl")
     include("constants.jl")
     include("element.jl")

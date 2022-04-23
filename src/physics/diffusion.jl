@@ -34,12 +34,14 @@ function κ_condensate(D::MassDiffusivity, r::Length, M::Mass, T::Temperature, �
     return κ / (1 + λₜ * Knₜ_val)
 end
 
-function dmp_dt(element::Element, atm::Atmosphere, D::MassDiffusivity, r::Length, M::Mass, T::Temperature, κ, μ, ρ, S; is_ice=true) # Jacobson 16.13 but with the numerator of Gao 2018 (A16)
+function dmp_dt(element::Element, atm::Atmosphere, pₛ::Pressure, r::Length, M::Mass, T::Temperature, κ, μ::Mass, ρ::Density, gas_conc::Real; is_ice=true) # Jacobson 16.13 but with the numerator of Gao 2018 (A16)
+    D = diffusivity(element, T, atm.mw)
+    S = supersaturation(element, gas_conc, T)
     Dp = D_condensate(D, r, M, T)
-    Ak = akelvin(element, T) # exp(2 * M * σₛ / (ρₚ * R * T * r))
+    Ak = akelvin(element, T) 
     κₐ = κ_condensate(D, r, M, T, κ, atm.cₚ, μ, ρ)
     Ft, Fv = Ft_Fv(z, Dp, κₐ, atm.cₚ, is_ice) 
-    num = 4π * r * Dp * pₛ * (S - Ak)
+    num = 4π * r * Dp * pₛ * (S + 1 - Ak)
     denom = ((Dp * L * pₛ) / (κₐ * T)) * (L * M / (R * T) - 1) * (1 / Ft) + R * T / (M * Fv)
     return num / denom
 end

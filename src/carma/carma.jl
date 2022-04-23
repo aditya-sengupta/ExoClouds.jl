@@ -1,5 +1,5 @@
 module CARMA
-    include("../units.jl")
+    include("../utils.jl")
     include("utils.jl")
 
     using StaticArrays: MArray
@@ -31,7 +31,7 @@ module CARMA
 
     abstract type Microphysics end
 
-    function source(::Microphysics, pc::AbstractArray)
+    function source!(::Microphysics, state::State, dpc_dt::AbstractArray)
         println("This function should provide a contribution to the CARMA differential equation source term due to the relevant piece of physics, in a form that I've yet to work out.")
     end
 
@@ -59,11 +59,17 @@ module CARMA
         end
     end
 
+    function loss!(n::Nucleation, state::State, dpc_dt::AbstractArray) end
+
     """
     Describes phase changes due to diffusion of condensate molecules to and away from the cloud particle.
     """
     struct Diffusion <: Microphysics
         particle::Particle
+    end
+
+    function source!(d::Diffusion, state::State, dpc_dt::AbstractArray) 
+        
     end
 
     struct Heating <: Microphysics

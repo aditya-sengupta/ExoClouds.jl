@@ -10,7 +10,7 @@ struct VirgaCache
     fsed::Float64
     sig::Float64
     alpha_pressure::FloatPres
-    temperature::Extrapolation
+    temperature::LTExtrapolation
     # layer_temperature::Vector{FloatTemp}
     # layer_pressure::Vector{FloatPres}
     Kzz::Vector{FloatKiVi}
